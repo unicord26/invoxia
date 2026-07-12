@@ -1,209 +1,202 @@
-# 🍃 Leafx
+# 🍃 Leafx — Modern GST Billing & Inventory Suite
 
-[![Monorepo](https://img.shields.io/badge/Monorepo-Turborepo-EF4444?style=flat-square&logo=turborepo)](https://turbo.build/)
-[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org/)
-[![Express](https://img.shields.io/badge/Backend-Express%204-000000?style=flat-square&logo=express)](https://expressjs.com/)
-[![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748?style=flat-square&logo=prisma)](https://prisma.io/)
-[![Supabase](https://img.shields.io/badge/Auth%20%26%20Storage-Supabase-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
+<div align="center">
+  <img src="logos.png" alt="Leafx Logo" width="160" height="160" style="border-radius: 50%; box-shadow: 0 10px 25px rgba(0,0,0,0.15);" />
+  
+  <p align="center">
+    <strong>A premium, multi-tenant GST Billing, POS, Accounting & Inventory platform for Indian SMEs.</strong>
+  </p>
 
-> A high-fidelity GST Billing, Accounting & Inventory platform for Indian SMEs, modeled after the best-in-class features of Vyapar. Built for fast counter POS billing, inventory management, interstate/intrastate tax calculations, ledger tracking, and multi-tenant isolation.
-
----
-
-## 📖 Table of Contents
-
-- [Ecosystem & Features](#-ecosystem--features)
-- [Monorepo Architecture](#-monorepo-architecture)
-- [Tech Stack](#-tech-stack)
-- [Environment Configuration](#-environment-configuration)
-- [Getting Started](#-getting-started)
-- [Developer Commands](#-developer-commands)
-- [Architecture Diagrams](#%EF%B8%8F-architecture-diagrams)
-- [Database Schema & Migrations](#-database-schema--migrations)
+  <p align="center">
+    <a href="https://turbo.build/"><img src="https://img.shields.io/badge/Monorepo-Turborepo-EF4444?style=for-the-badge&logo=turborepo" alt="Turborepo" /></a>
+    <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Frontend-Next.js%2015-000000?style=for-the-badge&logo=nextdotjs" alt="Next.js" /></a>
+    <a href="https://expressjs.com/"><img src="https://img.shields.io/badge/Backend-Express%204-000000?style=for-the-badge&logo=express" alt="Express" /></a>
+    <a href="https://prisma.io/"><img src="https://img.shields.io/badge/ORM-Prisma-2D3748?style=for-the-badge&logo=prisma" alt="Prisma" /></a>
+    <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Services-Supabase-3ECF8E?style=for-the-badge&logo=supabase" alt="Supabase" /></a>
+  </p>
+</div>
 
 ---
 
-## 🌟 Ecosystem & Features
+## 🚀 Welcome to Leafx
 
-Leafx is partitioned into core business capabilities engineered to solve day-to-day operations for small and medium enterprises:
+Leafx is a comprehensive desktop-first and mobile-responsive billing platform designed to digitize Indian small and medium enterprises (SMEs). Inspired by the features of Vyapar, Leafx simplifies retail invoicing, wholesale trade, inventory tracking, and GST reporting.
 
-*   **Sales Billing & POS:** Intrastate (CGST + SGST) and Interstate (IGST) automatic calculations, flat/percentage invoice discounts, custom series numbering, POS counter billing, thermal print layout, and Tally-style A4 PDF invoices.
-*   **Inventory & Items:** Dynamic Product/Service definitions, measurement unit mapping, dynamic pricing rules (tax-inclusive/exclusive sale, purchase, and wholesale tiers), low-stock thresholds, batch expiry trackers, and serial number registries.
-*   **Parties Ledger:** Comprehensive Customer/Supplier directory, credit limit and period guards, opening balance tracking, dynamic GSTIN verification, detailed address mapping, and live running account statement reports.
-*   **Business Settings & Multi-tenancy:** Isolated workspaces per registered business profile, signature/logo asset storage, custom invoice terms, and role-based staff matrices.
+### 🌟 Core Product Features
+
+*   **⚡ Supercharged POS Billing:** Rapid counter checkouts with instant keyboard shortcuts, dynamic item catalog search, barcode lookup, and single-click invoice generation.
+*   **📑 Compliant Invoicing:** Auto-calculates CGST + SGST (intrastate) or IGST (interstate) based on buyer-seller state configurations. Supports flat discounts, rounding-off thresholds, custom terms, and custom print layouts.
+*   **📦 Advanced Inventory Engine:** Define products and services with tax-inclusive/exclusive pricing structures, assign custom SKUs/codes, manage low-stock thresholds, and track batch expiries or unique serial numbers.
+*   **👥 Dual-Party Ledger:** Maintain active customer and supplier profiles, set credit limits or grace periods, track opening balances, verify GSTINs, and generate ledger balance statements.
+*   **🏢 Multi-Tenant Workspaces:** Create and toggle between multiple business profiles securely. Each tenant has isolated database references, dedicated storage buckets, configuration rules, and staff access controls.
 
 ---
 
-## 📂 Monorepo Architecture
+## 📁 Monorepo Workspace Directory
 
-Leafx uses **Turborepo** to orchestrate dependencies and builds across frontend, backend, and shared libraries:
+Leafx is organized as a unified monorepo leveraging npm workspaces and Turborepo:
 
 ```text
 ├── client/
-│   └── web/                 # Next.js web application (Dashboard, POS, Invoices)
+│   └── web/                 # Next.js 15 Web Application (Dashboard, POS, Ledgers)
 ├── server/
-│   └── api/                 # Express API server (Controllers, auth verification, PDF rendering)
+│   └── api/                 # Node.js + Express REST API Server
 ├── shared/
-│   ├── core/                # Shared utilities & GST tax computation engine
-│   ├── db/                  # Shared Prisma schema, clients, and db migrations
-│   └── types/               # Common TypeScript interfaces & Zod validation schemas
-├── package.json             # Root monorepo workspace dependencies & orchestrator
-└── turbo.json               # Turborepo task pipeline configuration
+│   ├── core/                # Core calculation utilities & GST tax computation engine
+│   ├── db/                  # Shared database models, Prisma client exports & scripts
+│   └── types/               # Common Type definitions & Zod validation schemas
+├── package.json             # Monorepo workspaces definition
+└── turbo.json               # Pipeline build rules & caching configurations
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ System Architecture
 
-### Frontend App (`client/web`)
-*   **Framework:** React 19, Next.js 15 (App Router)
-*   **State & Querying:** TanStack Query (React Query)
-*   **Forms:** React Hook Form + Zod resolvers
-*   **Styling:** Tailwind CSS + Radix UI Primitives (shadcn/ui template components)
+Leafx utilizes a split-client server framework optimized for cloud synchronization and offline resiliency:
 
-### Backend API (`server/api`)
-*   **Runtime:** Node.js, Express, TypeScript (`tsx` execution)
-*   **Auth Proxy:** Supabase Auth JWT validation middleware
-*   **Database Interface:** Prisma Client
+```mermaid
+graph TD
+  %% Style Definitions
+  classDef clientStyle fill:#15803d,stroke:#16a34a,stroke-width:2px,color:#fff;
+  classDef apiStyle fill:#1e3a8a,stroke:#2563eb,stroke-width:2px,color:#fff;
+  classDef dbStyle fill:#374151,stroke:#4b5563,stroke-width:2px,color:#fff;
+  classDef externalStyle fill:#7c2d12,stroke:#ea580c,stroke-width:2px,color:#fff;
 
-### Database & Storage
-*   **Database:** Postgres (hosted on Supabase)
-*   **Authentication:** Supabase Auth (username-password, OTP, email-confirmed users)
-*   **Assets Storage:** Supabase Storage (logo, signatures, product images)
+  User((Retailer / SME User)) -->|Uses Client UI| WebApp[Next.js 15 Client app]
+  WebApp -->|HTTPS REST requests| ExpressAPI[Express API Backend]
+  WebApp -->|Direct media upload & session state| Supabase[Supabase Platform]
+  ExpressAPI -->|Validates session tokens| Supabase
+  ExpressAPI -->|Executes queries| DB[(PostgreSQL Database)]
+
+  class WebApp clientStyle;
+  class ExpressAPI apiStyle;
+  class DB dbStyle;
+  class Supabase externalStyle;
+```
 
 ---
 
-## ⚙️ Environment Configuration
+## 🔐 Authentication & Session Provisioning Flow
 
-### Root Environment (`/.env`)
-Create a `.env` file at the monorepo root:
+On user sign-in or sign-up, session states synchronize between client, auth providers, and database schemas:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User as SME User
+  participant Client as Next.js Client
+  participant Supabase as Supabase Auth
+  participant API as Express API
+  participant DB as Postgres (Prisma)
+
+  User->>Client: Enters credentials (username, password)
+  Client->>Supabase: Post Auth parameters
+  Supabase-->>Client: Returns Authorized User JWT Session
+  Client->>API: Executes HTTP Request + Authorization Bearer JWT
+  API->>API: Decrypts & validates JWT signature locally
+  alt Is new user account?
+    API->>DB: Provision default Business, Owner Membership & Settings
+  end
+  API-->>Client: Returns JSON payloads containing business data
+```
+
+---
+
+## 📝 GST Tax Calculation Pipeline
+
+All billing calculations are performed in integers (paise) to prevent decimal floating-point rounding errors:
+
+```mermaid
+graph LR
+  %% Style Definitions
+  classDef moduleStyle fill:#1e293b,stroke:#475569,stroke-width:2px,color:#fff;
+  classDef decisionStyle fill:#b45309,stroke:#d97706,stroke-width:2px,color:#fff;
+  classDef actionStyle fill:#047857,stroke:#059669,stroke-width:2px,color:#fff;
+
+  Input[Invoice Line Items & Addresses] --> Core[@leafx/core Tax Engine]
+  Core --> Match{Buyer-Seller State Match?}
+  Match -->|Yes: Intrastate| Intra[Split Tax Rate: CGST + SGST]
+  Match -->|No: Interstate| Inter[Apply Tax Rate: IGST]
+  Intra --> Calculate[Calculate values in paise]
+  Inter --> Calculate
+  Calculate --> Round[Apply Rounding-Off Offset]
+  Round --> Output[Output invoice schema structure]
+
+  class Core moduleStyle;
+  class Match decisionStyle;
+  class Intra,Inter,Calculate,Round actionStyle;
+```
+
+---
+
+## ⚙️ Environment Profile Configuration
+
+To get started, duplicate the `.env.example` file to `.env` in the root directory:
+
+```bash
+cp .env.example .env
+```
+
+Define the configuration variables inside the `.env` profile:
 
 ```ini
-# --- Ports ---
+# --- Dev Server Ports ---
 API_PORT="5000"
 NEXT_PUBLIC_API_URL="http://localhost:5000"
 
-# --- Prisma / Postgres (Supabase) ---
-DATABASE_URL="postgresql://postgres.<project-ref>:<password>@<pooler-host>:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.<project-ref>:<password>@<direct-host>:5432/postgres"
+# --- Database pool configurations ---
+DATABASE_URL="postgresql://postgres.<project>:<password>@<pooler>:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.<project>:<password>@<host>:5432/postgres"
 
-# --- Supabase Project Credentials ---
-SUPABASE_URL="https://<project-ref>.supabase.co"
-SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR..."
-SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR..."
-SUPABASE_JWT_SECRET="JWT_HMAC_Secret..."
-NEXT_PUBLIC_SUPABASE_URL="https://<project-ref>.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR..."
-```
+# --- Supabase platform keys ---
+SUPABASE_URL="https://<project>.supabase.co"
+SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5..."
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5..."
+SUPABASE_JWT_SECRET="JWT_Secret_Token..."
 
-### Client Environment (`/client/web/.env`)
-Next.js loads public environment variables from the application directory:
-
-```ini
-NEXT_PUBLIC_API_URL="http://localhost:5000"
-NEXT_PUBLIC_SUPABASE_URL="https://<project-ref>.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR..."
+# --- Client variables ---
+NEXT_PUBLIC_SUPABASE_URL="https://<project>.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5..."
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🛠️ Getting Started & Installation
 
-### 1. Install Dependencies
-Installs workspace packages and sets up local symlinks in one step:
+Follow these instructions to run Leafx locally on your machine:
+
+### 1. Install Node Dependencies
+Use the workspace orchestrator to install package dependencies:
 ```bash
 npm install
 ```
 
-### 2. Generate Prisma Client
-Generates the Prisma Client binary inside `shared/db` using the schema:
+### 2. Generate Prisma Schema Clients
+Compile database schema configurations into generated TypeScript type libraries:
 ```bash
 npm run db:generate
 ```
 
-### 3. Run Development Servers
-Starts the Express API on port `5000` and the Next.js frontend on port `3000` using Turborepo pipeline:
+### 3. Launch Development Workspaces
+Start Next.js frontend (port `3000`) and Express API backend (port `5000`) simultaneously:
 ```bash
 npm run dev
 ```
 
-Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+Visit **[http://localhost:3000](http://localhost:3000)** in your browser, enter username `admin` and password `admin123` to log in, and begin managing your business!
 
 ---
 
-## 💻 Developer Commands
+## 💻 Developer Command Registry
 
-The following scripts can be run from the monorepo root:
-
-| Command | Workspace Scope | Description |
+| Workspace Script | Context Scope | Description |
 | :--- | :--- | :--- |
-| `npm run dev` | Monorepo Root | Launches web application and backend API concurrently |
-| `npm run dev:client` | `client/web` | Runs ONLY the Next.js frontend app |
-| `npm run dev:server` | `server/api` | Runs ONLY the Express API backend |
-| `npm run build` | Monorepo Root | Compiles and builds all workspaces for production |
-| `npm run typecheck` | Monorepo Root | Performs type checking across all workspaces |
-| `npm run db:push` | `shared/db` | Pushes the local schema modifications to the active DB |
-| `npm run db:studio` | `shared/db` | Launches Prisma Studio GUI interface on port `5555` |
-| `npm test` | `shared/core` | Runs test runner for the custom GST tax calculation engine |
-
----
-
-## 🗺️ Architecture Diagrams
-
-Here are core architectural flows representing the operations of the application:
-
-### 1. System Overview Architecture
-
-```mermaid
-graph TD
-  User((End User)) -->|Interacts| Client[Next.js Client app :3000]
-  Client -->|App API Calls| Server[Express API Server :5000]
-  Client -->|Auth Actions & Media| Supa[Supabase Platform]
-  Server -->|JWT Verification| Supa
-  Server -->|ORM Queries| DB[(PostgreSQL Database)]
-```
-
-### 2. Authentication & Provisioning Flow
-
-```mermaid
-sequenceDiagram
-  participant Client as Next.js Web Client
-  participant Server as Express API Router
-  participant Supa as Supabase Auth
-  participant DB as Prisma (Postgres)
-
-  Client->>Supa: Sign In (username, password)
-  Supa-->>Client: Return Session & JWT
-  Client->>Server: HTTP Request + Bearer JWT
-  Server->>Server: Verify JWT signature locally
-  alt First login detection
-    Server->>DB: Provision Business & Owner Membership
-  end
-  Server-->>Client: Returns Authorized Data Response
-```
-
-### 3. Sales Tax Calculation Engine
-
-```mermaid
-graph TD
-  Input["Input: (rates, discounts, addresses)"] --> TaxCore["Tax Core Module (@leafx/core)"]
-  TaxCore --> StateCheck{"Intrastate State Match?"}
-  StateCheck -->|Yes| Intra["Apply CGST + SGST (Split tax Rate)"]
-  StateCheck -->|No| Inter["Apply IGST (Full tax Rate)"]
-  Intra --> Calc["Compute values in paise (integers to avoid floats rounding issues)"]
-  Inter --> Calc
-  Calc --> Output["Output JSON: (taxable, cgst, sgst, igst, roundedTotal)"]
-```
-
----
-
-## 🗄️ Database Schema & Migrations
-
-Database operations are modeled in [schema.prisma](file:///h:/UniCord/Product/Vyapar/server/prisma/schema.prisma) under `server/prisma`.
-
-To perform schema modifications:
-1. Make changes to the `schema.prisma` file.
-2. Run `npm run db:push` to apply changes directly to the developer database.
-3. Run `npm run db:generate` to regenerate database type interfaces.
-#   i n v o x i a  
- 
+| `npm run dev` | Monorepo Root | Compiles and starts both Web and API concurrently |
+| `npm run dev:client` | `client/web` | Launches Next.js dev server on port `3000` |
+| `npm run dev:server` | `server/api` | Launches Express server on port `5000` |
+| `npm run build` | Monorepo Root | Bundles all static packages for production environments |
+| `npm run typecheck` | Monorepo Root | Performs workspace type verification |
+| `npm test` | `shared/core` | Runs jest test runner on calculation tax logic |
+| `npm run db:push` | `shared/db` | Pushes local schema modifications directly to the active DB |
+| `npm run db:studio` | `shared/db` | Opens the Prisma database explorer GUI on port `5555` |
