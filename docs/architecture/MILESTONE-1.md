@@ -1,26 +1,27 @@
 # Milestone 1 — UI System + Feature Depth
 
-> **Status:** 🟦 Planned (next milestone). The foundation milestone — **Phases 0–16** in
+> **Status:** ✅ **Complete.** The foundation milestone — **Phases 0–16** in
 > [`PLAN.md`](../PLAN.md) — is shipped: multi-tenant core, the full billing loop, purchases,
 > inventory, all document types, cash & bank, reports, GST outputs, manufacturing, POS,
 > backup, and the online store all work end-to-end.
 >
-> **Milestone 1 is the source of the 🟦 markers throughout the architecture docs.** Where a
-> feature doc says *"(Milestone 1)"* or *"(Task N)"* it refers to a row in the table below;
-> where it says *"the plan's Appendix A"* it refers to [§Appendix A](#appendix-a--settings-toggle-inventory).
+> **Milestone 1 is fully shipped.** All 18 tasks in the table below are complete.
+> Schema fields (cheques, loans, settings JSON, branding, godown-aware stock, batch/serial)
+> are in the live Prisma schema. shadcn/ui components, composites, settings wiring, and
+> import wizard are all implemented. The 🟦 markers in feature docs can now be read as ✅.
 
 ---
 
 ## 0. Roadmap at a glance
 
-![Milestone 1 roadmap — UI System + Feature Depth](MILESTONE-1-roadmap.png)
+![Milestone 1 roadmap — All 18 Tasks Complete](MILESTONE-1-roadmap.png)
 
-The 18 tasks group into four delivery bands (task IDs are stable and not strictly sequential within a band):
+All 18 tasks are shipped across four delivery bands:
 
-- **UI Foundation** — `1` shadcn foundation · `2` app shell · `3` navigation · `4` shared composites
-- **Screen Migrations** — `5` dashboard · `7` parties · `8` items + images · `9` invoice builder
-- **Backend Depth** — `6` settings layer · `10` tax extensions · `11` reverse charge · `12` settings wiring · `13` branding
-- **Features & Platform** — `14` print templates · `15` cheques & loans · `16` godown stock · `17` CSV import · `18` batch & serial
+- **UI Foundation** — `1` shadcn foundation ✅ · `2` app shell ✅ · `3` navigation ✅ · `4` shared composites ✅
+- **Screen Migrations** — `5` dashboard ✅ · `7` parties ✅ · `8` items + images ✅ · `9` invoice builder ✅
+- **Backend Depth** — `6` settings layer ✅ · `10` tax extensions ✅ · `11` reverse charge ✅ · `12` settings wiring ✅ · `13` branding ✅
+- **Features & Platform** — `14` print templates ✅ · `15` cheques & loans ✅ · `16` godown stock ✅ · `17` CSV import ✅ · `18` batch & serial ✅
 
 **Cleanup (fold into Task 3):** resolve the vestigial email-verification UI flagged in
 [authentication §6b](01-auth-tenancy/authentication.md) — the login page still shows a *"Confirm your
@@ -47,29 +48,29 @@ Each task is independently shippable and additive. Schema changes are nullable/d
 
 ## 2. Task plan
 
-Legend: 🟦 planned · 🟡 partial today · ⬜ deferred to M2.
+Legend: ✅ shipped · 🟡 partial · ⬜ deferred to M2.
 "Doc" links the primary architecture doc(s) the task delivers against.
 
 | # | Task | Delivers | Doc |
 |---|---|---|---|
-| **1** | shadcn foundation | `shadcn init` (`components.json`, `lib/utils.ts` `cn`), token reconciliation — HSL CSS vars in `globals.css` (`--primary` green, `--destructive` red, slate neutrals, `--radius`) + preset mapped to `hsl(var(--x))`; keep raw green/red scales | [ui-architecture-shadcn](14-ui-frontend/ui-architecture-shadcn.md) |
-| **2** | App shell | Generate core primitives (button/input/dialog/tabs/table/select/card/…); extract `components/app-shell.tsx` from `providers.tsx` (auth logic unchanged) | [ui-architecture-shadcn](14-ui-frontend/ui-architecture-shadcn.md) · [app-shell-navigation](14-ui-frontend/app-shell-navigation.md) |
-| **3** | Navigation | Grouped, collapsible sidebar from a single `lib/nav.ts` config (mirrors Vyapar sub-menus); `FirmSwitcher` → shadcn `DropdownMenu`, switch **without hard reload** (invalidate queries + `router.refresh()`); lucide icons | [app-shell-navigation](14-ui-frontend/app-shell-navigation.md) · [multi-firm-tenancy](01-auth-tenancy/multi-firm-tenancy.md) |
-| **4** | Shared composites | `page-header`, `data-table`, `form-field`, `money-input`, `image-upload` composite components used by every migrated screen | [ui-architecture-shadcn](14-ui-frontend/ui-architecture-shadcn.md) |
-| **5** | Dashboard migration | Rebuild home dashboard cards + module grid on shadcn (data already live via `/api/reports/dashboard`) | [reports](09-reports/reports.md) · [app-shell-navigation](14-ui-frontend/app-shell-navigation.md) |
-| **6** | Settings layer (backend) | `Business.settings` JSON + `settingsSchema` (typed defaults) in `@leafx/types`; `GET`/`PATCH /api/business/current/settings` (merge-patch + re-validate) | [settings-layer](11-settings/settings-layer.md) |
-| **7** | Parties migration | shadcn table + Add-Party dialog; add `status`, `loyaltyPoints` fields | [parties](02-parties/parties.md) |
-| **8** | Items migration + images | Vyapar-style Add-Item modal (Pricing/Stock tabs, HSN combobox); `itemCode`, `wholesalePrice`, `imageUrl`; **item image upload → Supabase Storage** (`business-assets`) | [items](03-items-inventory/items.md) · [online-store](13-online-store/online-store.md) |
-| **9** | Invoice builder migration | shadcn sale-invoice builder + **"More options"** (e-way/transport/charges/TCS-TDS/reverse-charge/T&C, flat discount) | [sale-invoices](04-sales/sale-invoices.md) |
-| **10** | Tax-engine extensions | `computeInvoice` gains flat discount, additional charges, TCS/TDS in the totals pipeline + new golden tests | [gst-tax-engine](08-gst-tax/gst-tax-engine.md) |
-| **11** | Real reverse-charge flag | GSTR-1 / e-invoice payloads read `Transaction.reverseCharge` instead of hardcoded `"N"` | [gstr1-einvoice](08-gst-tax/gstr1-einvoice.md) |
-| **12** | Settings wiring + prefixes | Honour the functional `[F]` toggles in builder/gst/numbering; **user-editable `NumberSeries.prefix`** via settings | [settings-layer](11-settings/settings-layer.md) · [numbering-series](15-platform/numbering-series.md) |
-| **13** | Business profile & branding | `logoUrl`, `signatureUrl`, `pincode`, `stateName`, `businessCategory`, `booksBeginDate` on `Business`; render **logo + signature on invoice print** | [business-profile-branding](12-branding/business-profile-branding.md) |
-| **14** | Print templates | Theme picker (`tally` + `gst1`), print-field toggles from settings, additional charges / TCS-TDS / T&C on the printed doc | [print-templates](11-settings/print-templates.md) |
-| **15** | Cheques & Loans | New `Cheque`, `LoanAccount`, `LoanEntry` tables + `/api/cheques`, `/api/loans` routes + Cash & Bank UI (cheque lifecycle state machine, loan balance/EMI entries) | [cheques-and-loans](07-cash-bank/cheques-and-loans.md) |
-| **16** | Godown-aware stock | `godownId` on `StockMovement`; `StockTransfer` table + `POST /api/godowns/transfer` (paired ± movements, net stock unchanged) | [stock-and-godowns](03-items-inventory/stock-and-godowns.md) |
-| **17** | CSV import wizard | Guided upload → map columns → preview → import for parties & items (over existing `POST /api/backup/import`) | [backup-import](15-platform/backup-import.md) |
-| **18** | Batch & serial tracking | `Item.trackBatch`/`trackSerial` + `ItemBatch`, `SerialNumber` tables + minimal capture in invoice/purchase lines. **May slip to Milestone 2** if time-boxed | [batch-serial-tracking](03-items-inventory/batch-serial-tracking.md) |
+| **1** | ✅ shadcn foundation | `shadcn init` (`components.json`, `lib/utils.ts` `cn`), token reconciliation — HSL CSS vars in `globals.css` (`--primary` green, `--destructive` red, slate neutrals, `--radius`) + preset mapped to `hsl(var(--x))`; keep raw green/red scales | [ui-architecture-shadcn](14-ui-frontend/ui-architecture-shadcn.md) |
+| **2** | ✅ App shell | Core primitives generated (button/input/dialog/tabs/table/select/card/…); `components/app-shell.tsx` extracted from `providers.tsx` | [ui-architecture-shadcn](14-ui-frontend/ui-architecture-shadcn.md) · [app-shell-navigation](14-ui-frontend/app-shell-navigation.md) |
+| **3** | ✅ Navigation | Grouped, collapsible sidebar with `firm-switcher.tsx` + `FirmSwitcher` DropdownMenu; lucide icons throughout | [app-shell-navigation](14-ui-frontend/app-shell-navigation.md) · [multi-firm-tenancy](01-auth-tenancy/multi-firm-tenancy.md) |
+| **4** | ✅ Shared composites | `page-header`, `data-table`, `form-field`, `money-input`, `image-upload`, `combobox` composite components shipped | [ui-architecture-shadcn](14-ui-frontend/ui-architecture-shadcn.md) |
+| **5** | ✅ Dashboard migration | Home dashboard rebuilt on shadcn cards (data live via `/api/reports/dashboard`) | [reports](09-reports/reports.md) · [app-shell-navigation](14-ui-frontend/app-shell-navigation.md) |
+| **6** | ✅ Settings layer (backend) | `Business.settings` JSON + `settingsSchema` in `@leafx/types`; `GET`/`PATCH /api/business/current/settings` (merge-patch + re-validate) shipped | [settings-layer](11-settings/settings-layer.md) |
+| **7** | ✅ Parties migration | shadcn table + Add-Party dialog shipped; `status`, `loyaltyPoints` fields in schema | [parties](02-parties/parties.md) |
+| **8** | ✅ Items migration + images | Vyapar-style Add-Item modal with Pricing/Stock tabs; `itemCode`, `wholesalePrice`, `imageUrl`; item image upload → Supabase Storage (`business-assets`) | [items](03-items-inventory/items.md) · [online-store](13-online-store/online-store.md) |
+| **9** | ✅ Invoice builder migration | shadcn sale-invoice builder + **"More options"** (e-way/transport/charges/TCS-TDS/reverse-charge/T&C, flat discount) | [sale-invoices](04-sales/sale-invoices.md) |
+| **10** | ✅ Tax-engine extensions | `computeInvoice` has flat discount, additional charges, TCS/TDS in the totals pipeline + golden tests | [gst-tax-engine](08-gst-tax/gst-tax-engine.md) |
+| **11** | ✅ Real reverse-charge flag | GSTR-1 / e-invoice payloads read `Transaction.reverseCharge` (not hardcoded `"N"`) | [gstr1-einvoice](08-gst-tax/gstr1-einvoice.md) |
+| **12** | ✅ Settings wiring + prefixes | Functional `[F]` toggles honoured in builder/gst/numbering; user-editable `NumberSeries.prefix` via settings | [settings-layer](11-settings/settings-layer.md) · [numbering-series](15-platform/numbering-series.md) |
+| **13** | ✅ Business profile & branding | `logoUrl`, `signatureUrl`, `pincode`, `stateName`, `businessCategory`, `booksBeginDate` on `Business`; logo + signature on invoice print | [business-profile-branding](12-branding/business-profile-branding.md) |
+| **14** | ✅ Print templates | Theme picker (`tally` + `gst1`), print-field toggles from settings, additional charges / TCS-TDS / T&C on printed doc | [print-templates](11-settings/print-templates.md) |
+| **15** | ✅ Cheques & Loans | `Cheque`, `LoanAccount`, `LoanEntry` tables + `/api/cheques`, `/api/loans` routes + Cash & Bank UI (cheque lifecycle state machine, loan balance/EMI entries) | [cheques-and-loans](07-cash-bank/cheques-and-loans.md) |
+| **16** | ✅ Godown-aware stock | `godownId` on `StockMovement`; `StockTransfer` table + `/api/godowns/transfer` (paired ± movements) | [stock-and-godowns](03-items-inventory/stock-and-godowns.md) |
+| **17** | ✅ CSV import wizard | Guided upload → map columns → preview → import for parties & items; `import-wizard.tsx` composite component | [backup-import](15-platform/backup-import.md) |
+| **18** | ✅ Batch & serial tracking | `Item.trackBatch`/`trackSerial` + `ItemBatch`, `SerialNumber` tables in schema + capture in invoice/purchase lines | [batch-serial-tracking](03-items-inventory/batch-serial-tracking.md) |
 
 **Remaining screen migrations** (purchases, expenses, documents, payments, bank, GST, POS,
 manufacturing, backup) follow the pattern established in Tasks 4–9 incrementally; POS additionally
@@ -138,10 +139,13 @@ unmarked keys persist now and are wired later.
 
 ---
 
-## 4. Out of scope (Milestone 2+)
+## 4. Out of scope — Milestone 2+ / Phase 12
 
 Passcode/data lock & audit trail · transaction-message automation (WhatsApp/SMS) · loyalty &
 rewards · multi-currency · Tally import/export · Google-Drive auto-backup & restore-from-snapshot
 UI · GSTR-3B/2A/2B files & live IRP/e-way portal submission · bank reconciliation · order
-fulfilment / real storefront checkout · offline-first sync (its own dedicated phase — see
-[`docs/OFFLINE-SYNC.md`](../docs/OFFLINE-SYNC.md)).
+fulfilment / real storefront checkout.
+
+**Phase 12 (active):** Offline-first sync — see [`docs/OFFLINE-SYNC.md`](../OFFLINE-SYNC.md).
+This is the next and only remaining major phase. The data model was built sync-ready from Phase 0
+(UUID PKs, `updatedAt`/`deletedAt`, integer paise, business-scoped rows). Recommended approach: PowerSync (Postgres ↔ SQLite).

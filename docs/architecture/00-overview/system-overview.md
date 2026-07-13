@@ -22,7 +22,7 @@ flowchart LR
   subgraph Supabase["Supabase (cloud)"]
     Auth["Auth (JWT)"]
     PG[("Postgres")]
-    Storage["Storage (planned:<br/>business-assets)"]
+    Storage["Storage (business-assets:<br/>item images, logo/signature)"]
   end
 
   Web -->|"fetch + Bearer JWT<br/>+ x-business-id"| API
@@ -31,7 +31,7 @@ flowchart LR
   API -->|"validate token"| Auth
   API -->|"queries"| DB --> PG
   API -.uses.-> Core & Types
-  Web -.->|"logo/signature/item images"| Storage
+  Web -->|"logo/signature/item images"| Storage
 ```
 
 ## 3. Architecture (request path)
@@ -72,7 +72,7 @@ sequenceDiagram
 ```
 
 ## 6. API surface
-Base URL `NEXT_PUBLIC_API_URL` (default `http://localhost:4000`), all under `/api`. Public: `/health`, `/auth/*`, `/store/*`. Authed (require Supabase JWT): `/business`, `/businesses`, `/parties`, `/items`, `/invoices`, `/payments`, `/purchases`, `/expenses`, `/documents`, `/bank`, `/reports`, `/gst`, `/bom` `/production` `/godowns`, `/backup`.
+Base URL `NEXT_PUBLIC_API_URL` (default `http://localhost:4000`), all under `/api`. Public: `/health`, `/auth/*`, `/store/*`. Authed (require Supabase JWT): `/business`, `/businesses`, `/parties`, `/items`, `/invoices`, `/payments`, `/purchases`, `/expenses`, `/documents`, `/bank`, `/cheques`, `/loans`, `/reports`, `/gst`, `/bom`, `/production`, `/godowns`, `/backup`.
 
 ## 7. Key files
 - `server/api/src/index.ts` — app + route mounting
@@ -83,4 +83,4 @@ Base URL `NEXT_PUBLIC_API_URL` (default `http://localhost:4000`), all under `/ap
 - `shared/core/src` — money + tax engine · `shared/types/src/index.ts` — Zod
 
 ## 8. Status vs Vyapar
-✅ Multi-tenant core, all primary billing modules · 🟦 Settings layer, branding, transaction extras, inventory depth, shadcn UI (Milestone 1) · ⬜ Growth/marketing suite, Tally import/export, WhatsApp automation (M2+).
+✅ Multi-tenant core, all primary billing modules, settings layer, branding, cheques & loans, godown stock, batch/serial tracking, shadcn/ui design system, CSV import wizard · 🟠 Phase 12: Offline-first sync (PowerSync + SQLite — data model already sync-ready) · ⬜ Growth/marketing suite, Tally import/export, WhatsApp automation (M2+).

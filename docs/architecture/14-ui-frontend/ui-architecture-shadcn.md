@@ -1,14 +1,14 @@
 # UI Architecture (shadcn/ui)
 
 ## 1. Purpose
-The frontend design system. Migrating from hand-rolled Tailwind (repeated inline classes, `window.prompt` dialogs, inline SVGs) to **shadcn/ui** primitives (Radix + CVA + lucide) themed to the Leafx green brand — accessible, consistent, owned-in-repo components.
+The frontend design system. Migrated from hand-rolled Tailwind (repeated inline classes, `window.prompt` dialogs, inline SVGs) to **shadcn/ui** primitives (Radix + CVA + lucide) themed to the Leafx green brand — accessible, consistent, owned-in-repo components. Shipped in Milestone 1.
 
 ## 2. Ecosystem
 ```mermaid
 flowchart LR
-  Tokens["globals.css CSS vars + tailwind preset"] --> UI["components/ui/* (shadcn)"]
+  Tokens["globals.css CSS vars + tailwind preset"] --> UI["components/ui/* (shadcn — 23 primitives shipped)"]
   UI --> Screens["app/**/page.tsx"]
-  Shared["components/: page-header, data-table, form-field, money-input, image-upload"] --> Screens
+  Shared["components/: page-header, data-table, form-field, money-input, image-upload, combobox, import-wizard, connection-status"] --> Screens
   Query["TanStack Query + lib/api.ts"] --> Screens
 ```
 
@@ -50,9 +50,9 @@ sequenceDiagram
 n/a (frontend only).
 
 ## 7. Key files
-- `client/web/components.json` (🟦), `client/web/lib/utils.ts` (🟦 `cn`)
+- `client/web/components.json`, `client/web/lib/utils.ts` (`cn`)
 - `client/web/app/globals.css` (tokens), `shared/config/tailwind-preset.js`
-- `client/web/components/ui/*` (🟦 generated), `client/web/components/*` (composites)
+- `client/web/components/ui/*` (23 shadcn primitives), `client/web/components/*` (composites)
 
 ## 8. Status vs Vyapar
-🟦 Milestone 1 foundation + shell + key screens (Tasks 1–2 foundation/shell, 4 composites, 5/7/8/9 screens). Remaining ~15 screens follow the established pattern incrementally · ⬜ dark-mode toggle, storybook, full-page migration (M2).
+✅ Milestone 1 shipped: shadcn foundation (23 primitives), app-shell, collapsible sidebar + FirmSwitcher, shared composites (page-header/data-table/form-field/money-input/image-upload/combobox/import-wizard), settings/parties/items/invoice screens migrated · ⬜ Dark-mode toggle, Storybook, full-page migration for all secondary screens (M2+).

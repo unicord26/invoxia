@@ -11,7 +11,7 @@ flowchart TB
     R["React 19"]
     TQ["TanStack Query v5"]
     TW["Tailwind CSS 3.4 + preset"]
-    SH["shadcn/ui + Radix + lucide (planned)"]
+    SH["shadcn/ui + Radix + lucide"]
   end
   subgraph Backend
     EX["Express 4 (ESM, tsx watch)"]
@@ -36,7 +36,7 @@ flowchart TB
 | Frontend | **Next.js 15 App Router, React 19** | RSC + client islands, file routing |
 | Data fetching | **TanStack Query v5** | cache, invalidation, mutations |
 | Styling | **Tailwind 3.4** via shared preset `@leafx/config/tailwind` | shared green/red tokens |
-| Components | **shadcn/ui** (Radix + CVA + lucide) — *Milestone 1* | own the code, accessible primitives |
+| Components | **shadcn/ui** (Radix + CVA + lucide) on Leafx green theme — shipped in Milestone 1 | own the code, accessible primitives |
 | Backend | **Express (ESM)**, `tsx watch` dev | simple REST, familiar |
 | ORM | **Prisma 6** | typed models, migrations, `db push` |
 | DB / Auth / Files | **Supabase** (Postgres + JWT Auth + Storage) | managed Postgres + auth in one |
@@ -55,9 +55,9 @@ sequenceDiagram
   participant Web as web:3000
   participant Api as api:4000
   Dev->>Turbo: npm run dev
-  Turbo->>Web: next dev (port 3000)
-  Turbo->>Api: tsx watch src/index.ts (port 4000)
-  Web->>Api: NEXT_PUBLIC_API_URL
+  Turbo-->|next dev (port 3000)|Web
+  Turbo-->|tsx watch src/index.ts (port 5000)|Api
+  Web-->|NEXT_PUBLIC_API_URL|Api
 ```
 
 ## 6. API surface
@@ -71,4 +71,4 @@ n/a (cross-cutting).
 - `.env` (gitignored) / `.env.example`
 
 ## 8. Status vs Vyapar
-✅ Stack finalized and running · 🟦 shadcn/ui adoption in Milestone 1 · Dark mode tokens exist but no toggle yet.
+✅ Stack finalized and running, shadcn/ui shipped (Milestone 1 complete) · 🟠 Phase 12 (offline-first sync) is next · ⬜ Dark mode toggle, Storybook (M2+).

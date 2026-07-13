@@ -3,9 +3,9 @@
 Living architecture docs for **Leafx**, a GST billing & accounting platform for Indian SMEs (a functionally-equivalent Vyapar clone). **One feature per markdown file**, grouped by domain. Every doc embeds **Mermaid diagrams** (ecosystem `flowchart`, `graph` architecture, `erDiagram` data model, `sequenceDiagram` flows) that render on GitHub and in VS Code (with the Markdown Preview Mermaid extension).
 
 ## System map
-Hub-and-spoke: **Leafx Core** (`@leafx/core` tax engine + `@leafx/types` Zod schemas + multi-tenant Supabase Postgres) at the center, feature domains around it. Legend: ✅ Shipped · 🟦 Milestone 1 · ⬜ Backlog.
+Hub-and-spoke: **Leafx Core** (`@leafx/core` tax engine + `@leafx/types` Zod schemas + multi-tenant Supabase Postgres) at the center, feature domains around it. Legend: ✅ Shipped · 🟠 Phase 12 (Offline Sync) · ⬜ Backlog.
 
-![Leafx master architecture map](master-architecture.png)
+![Leafx master architecture map — all modules shipped](master-architecture.png)
 
 ## How to read a feature doc
 Each file follows the same 8-part template:
@@ -18,12 +18,10 @@ Each file follows the same 8-part template:
 7. **Key files** — repo paths
 8. **Status vs Vyapar** — Have / Partial / Planned
 
-Legend: ✅ Have · 🟡 Partial · 🟦 Planned (Milestone 1) · ⬜ Backlog (M2+)
+Legend: ✅ Have · 🟡 Partial · 🟠 Phase 12 Active · ⬜ Backlog (M2+)
 
-> **Roadmap:** the foundation milestone (Phases 0–16) is shipped — see [`../PLAN.md`](../PLAN.md).
-> Everything marked 🟦 across these docs belongs to **[MILESTONE-1.md](MILESTONE-1.md)** (the shadcn UI
-> migration + feature-depth plan); its task numbers and settings **Appendix A** are what the
-> per-feature "(Task N)" / "Appendix A" references point to.
+> **Milestone 1 is complete** — all 18 tasks (shadcn UI, settings, branding, cheques/loans, godown stock, import wizard, batch/serial) are shipped.
+> **Phase 12 (Offline-First Sync)** is the active milestone — see [`OFFLINE-SYNC.md`](../OFFLINE-SYNC.md) and the GSD roadmap in `.planning/ROADMAP.md`.
 
 ## Index
 
@@ -57,5 +55,6 @@ Vyapar/
 ├── shared/core       @leafx/core  — money + GST tax engine (pure, tested)
 ├── shared/types      @leafx/types — Zod schemas / shared types
 ├── shared/config     @leafx/config— tsconfig base + Tailwind preset
-└── architecture/                  — (this) living architecture docs
+├── docs/architecture/             — (this) living architecture docs
+└── .planning/                     — GSD planning documents + roadmap
 ```

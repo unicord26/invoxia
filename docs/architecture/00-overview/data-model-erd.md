@@ -38,7 +38,7 @@ erDiagram
   NumberSeries { int next }
 ```
 
-## 4. Milestone-1 additions (🟦)
+## 4. Milestone-1 additions (✅ all shipped)
 ```mermaid
 erDiagram
   Business ||--o{ Cheque : owns
@@ -47,17 +47,17 @@ erDiagram
   Item ||--o{ ItemBatch : "batch tracked"
   Item ||--o{ SerialNumber : "serial tracked"
   Godown ||--o{ StockTransfer : from_to
-  Business { json settings "🟦 all toggles" }
-  Business { string logoUrl "🟦" }
-  Item { int wholesalePrice "🟦" }
-  Item { string itemCode "🟦" }
-  Transaction { string ewayBillNo "🟦" }
-  Transaction { json additionalCharges "🟦" }
-  Cheque { string status "🟦 open|cleared|bounced" }
-  LoanAccount { int balance "🟦" }
-  ItemBatch { string batchNo "🟦" }
-  SerialNumber { string serial "🟦" }
-  StockTransfer { float qty "🟦" }
+  Business { json settings "✅ all toggles" }
+  Business { string logoUrl "✅" }
+  Item { int wholesalePrice "✅" }
+  Item { string itemCode "✅" }
+  Transaction { string ewayBillNo "✅" }
+  Transaction { json additionalCharges "✅" }
+  Cheque { string status "✅ open|cleared|bounced" }
+  LoanAccount { int balance "✅" }
+  ItemBatch { string batchNo "✅" }
+  SerialNumber { string serial "✅" }
+  StockTransfer { float qty "✅" }
 ```
 
 ## 5. Field-level additions
@@ -78,4 +78,4 @@ n/a — see per-feature docs.
 - `shared/types/src/index.ts` (Zod mirror + `settingsSchema`)
 
 ## 8. Status vs Vyapar
-✅ Core relational model complete and tenant-safe · 🟦 additions above · migrations are additive (nullable/defaulted) → non-destructive `prisma db push`.
+✅ Core relational model complete and tenant-safe · ✅ All Milestone 1 schema additions shipped (Cheque, LoanAccount, LoanEntry, StockTransfer, ItemBatch, SerialNumber, Business.settings, etc.) · migrations are additive (nullable/defaulted) → non-destructive `prisma db push`.
