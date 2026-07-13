@@ -37,6 +37,7 @@ npm-debug.log*
 *.exe
 *.lnk
 
-# claude / planning (machine-local, not for the team repo)
+# docs + planning live on the `doc` branch; kept locally but not tracked on main
 .claude/settings.local.json
 .planning/
+docs/
