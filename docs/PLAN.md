@@ -124,7 +124,7 @@ leafx/
 │  ├─ core/                # tax engine, money math, invoice numbering
 │  ├─ types/               # TS types + Zod schemas
 │  └─ config/              # tsconfig base + Tailwind preset (green/red theme)
-├─ templates/              # invoice print templates (GST Tally, thermal, …)
+├─ docs/templates/         # invoice print templates (GST Tally, thermal, …)
 ├─ .env / .env.example     # secrets (gitignored) + committed template
 └─ turbo.json
 ```

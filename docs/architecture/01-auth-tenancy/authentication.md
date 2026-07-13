@@ -57,7 +57,7 @@ sequenceDiagram
 The signup flow was **switched from OTP-gated to pre-confirmed** (working tree removes the
 `isVerified()` gate; `admin.createUser({ email_confirm: true })` activates the account with no
 email sent). Leftovers from the earlier email-verification approach remain and are **not wired**:
-- `templates/supabase-confirm-signup.html` + `templates/email-verification-preview.html` — Supabase
+- `docs/templates/supabase-confirm-signup.html` + `docs/templates/email-verification-preview.html` — Supabase
   "Confirm signup" email templates, only used if project-level email confirmation is re-enabled.
 - `login/page.tsx` still renders a **"Confirm your email" screen** after register (it branches on
   `d.needsConfirmation`, which `/register` no longer returns, so it always shows) and calls

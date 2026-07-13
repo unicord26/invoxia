@@ -57,5 +57,5 @@ Vyapar/
 ├── shared/core       @leafx/core  — money + GST tax engine (pure, tested)
 ├── shared/types      @leafx/types — Zod schemas / shared types
 ├── shared/config     @leafx/config— tsconfig base + Tailwind preset
-└── architectures/                 — (this) living architecture docs
+└── architecture/                  — (this) living architecture docs
 ```

@@ -1,7 +1,7 @@
 # 🍃 Leafx — Modern GST Billing & Inventory Suite
 
 <div align="center">
-  <img src="logos.png" alt="Leafx Logo" width="160" height="160" style="border-radius: 50%; box-shadow: 0 10px 25px rgba(0,0,0,0.15);" />
+  <img src="client/web/public/logos.png" alt="Leafx Logo" width="160" height="160" style="border-radius: 50%; box-shadow: 0 10px 25px rgba(0,0,0,0.15);" />
   
   <p align="center">
     <strong>A premium, multi-tenant GST Billing, POS, Accounting & Inventory platform for Indian SMEs.</strong>

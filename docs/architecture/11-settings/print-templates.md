@@ -46,7 +46,7 @@ No dedicated endpoints — pulls invoice via `/api/invoices/:id`, business via `
 
 ## 7. Key files
 - `client/web/app/invoices/[id]/page.tsx` (A4), `app/invoices/[id]/thermal/page.tsx`
-- `templates/gst-tally-invoice.html` (reference layout)
+- `docs/templates/gst-tally-invoice.html` (reference layout)
 - `shared/core/src/money.ts` (`inWordsINR`), `tax.ts` (`buildHsnSummary`)
 
 ## 8. Status vs Vyapar

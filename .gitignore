@@ -36,3 +36,7 @@ npm-debug.log*
 # reference binaries (not part of the codebase)
 *.exe
 *.lnk
+
+# claude / planning (machine-local, not for the team repo)
+.claude/settings.local.json
+.planning/

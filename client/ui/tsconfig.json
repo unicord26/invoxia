@@ -1,0 +1,7 @@
+{
+  "extends": "@leafx/config/tsconfig.base",
+  "compilerOptions": {
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}
