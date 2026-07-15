@@ -30,8 +30,14 @@ export class AuthService {
   }
 
   /**
-   * DEV MODE: the code is returned in the response so the flow works without an
-   * SMS/SMTP provider. In production, send it via provider and DO NOT return devCode.
+   * Issue an OTP.
+   *
+   * The code is only echoed back when OTP_DEV_MODE=true, which is meant for
+   * local work without an SMS/SMTP provider. Returning it unconditionally
+   * (as this used to) means anyone can request a code for someone else's
+   * address and read it straight out of the response — the OTP stops proving
+   * anything at all. It now stays server-side unless dev mode is switched on
+   * explicitly, and never in production.
    */
   async otpSend(body: OtpSendBody) {
     const channel = body?.channel === "phone" ? "phone" : "email";
@@ -42,8 +48,17 @@ export class AuthService {
     await this.prisma.otpCode.create({
       data: { channel, value, code, expiresAt: new Date(Date.now() + OTP_TTL_MIN * 60_000) },
     });
-    // TODO(prod): send `code` via SMS (phone) or email (SMTP) here instead of returning it.
-    return { sent: true, devCode: code };
+
+    const devMode = process.env.OTP_DEV_MODE === "true" && process.env.NODE_ENV !== "production";
+    if (devMode) {
+      console.log(`[otp] ${channel}=${value} code=${code} (OTP_DEV_MODE)`);
+      return { sent: true, devCode: code };
+    }
+
+    // TODO(prod): deliver `code` via SMS (phone) or email (SMTP) here. Until a
+    // provider is wired up, non-dev callers get no way to read the code — which
+    // is the safe failure, not a silent leak.
+    return { sent: true };
   }
 
   async otpVerify(body: OtpVerifyBody) {
@@ -75,8 +90,17 @@ export class AuthService {
     if (!firstName || !username || !email || !orgName || password.length < 6) {
       throw new BadRequestException({ error: "missing_fields" });
     }
+    // Check every unique column up front, not just username. User.phone and
+    // User.email are @unique too, and a collision discovered *after* the auth
+    // user exists is what strands the account (see the rollback below).
     if (await this.prisma.user.findFirst({ where: { username } })) {
       throw new ConflictException({ error: "username_taken" });
+    }
+    if (await this.prisma.user.findFirst({ where: { email } })) {
+      throw new ConflictException({ error: "email_taken" });
+    }
+    if (phone && (await this.prisma.user.findFirst({ where: { phone } }))) {
+      throw new ConflictException({ error: "phone_taken" });
     }
 
     // Create a PRE-CONFIRMED Supabase auth user (no email verification).
@@ -95,16 +119,32 @@ export class AuthService {
     }
     const uid = created.data.user.id;
 
-    await this.prisma.user.create({
-      data: {
-        id: uid, username, email, phone: phone || null, firstName, lastName,
-        name: `${firstName} ${lastName}`.trim(),
-      },
-    });
-    const business = await this.prisma.business.create({
-      data: { name: orgName, orgType: orgType || null, stateCode: "27" },
-    });
-    await this.prisma.membership.create({ data: { userId: uid, businessId: business.id, role: "owner" } });
+    // The auth user now exists but the app rows do not. If anything below fails
+    // we must undo it: an auth user with no User row can neither log in (login
+    // looks the user up by username and finds nothing) nor register again
+    // (Supabase reports the email as taken) — the address is burned and the
+    // person is locked out for good. The checks above catch the common races;
+    // this rollback covers the rest (concurrent signup, DB blip).
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.user.create({
+          data: {
+            id: uid, username, email, phone: phone || null, firstName, lastName,
+            name: `${firstName} ${lastName}`.trim(),
+          },
+        });
+        const business = await tx.business.create({
+          data: { name: orgName, orgType: orgType || null, stateCode: "27" },
+        });
+        await tx.membership.create({ data: { userId: uid, businessId: business.id, role: "owner" } });
+      });
+    } catch (e) {
+      await supabaseAdmin.auth.admin.deleteUser(uid).catch(() => {
+        // Nothing else to try; log loudly so the orphan can be reaped by hand.
+        console.error(`✗ Orphaned Supabase auth user ${uid} (${email}) — rollback failed`);
+      });
+      throw new ConflictException({ error: "registration_failed" });
+    }
 
     return { ok: true };
   }
