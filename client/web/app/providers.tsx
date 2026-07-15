@@ -20,12 +20,38 @@ function AuthGate({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    let settled = false;
+    const finish = (s: Session | null) => {
+      settled = true;
+      setSession(s);
       setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => sub.subscription.unsubscribe();
+    };
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => finish(data.session))
+      .catch((e) => {
+        console.error("Supabase getSession() failed:", e);
+        finish(null);
+      });
+
+    // onAuthStateChange fires an INITIAL_SESSION event almost immediately, so it
+    // also clears loading — a backstop if getSession() is slow or hangs.
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => finish(s));
+
+    // Last-resort guard: never strand the user on the loading screen if the auth
+    // handshake never settles (e.g. a hung getSession lock).
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        console.warn("Auth handshake did not settle within 8s; continuing without a session.");
+        finish(null);
+      }
+    }, 8000);
+
+    return () => {
+      clearTimeout(timeout);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const isPublic = pathname === "/login" || pathname.startsWith("/store");
