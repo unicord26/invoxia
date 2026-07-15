@@ -173,7 +173,7 @@ function SidebarContent({
             className={cn(
               "flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition",
               pathname === "/settings"
-                ? "bg-[#15311f] border-green-600 text-white"
+                ? "bg-[#0b2e27] border-green-600 text-white"
                 : "border-gray-600 hover:border-gray-500 text-gray-300"
             )}
           >

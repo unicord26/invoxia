@@ -229,6 +229,20 @@ Visit **[http://localhost:3000](http://localhost:3000)** in your browser, enter 
 
 ---
 
+## 🔧 Windows Troubleshooting & Layout Notes
+
+### Next.js 15 Webpack Hydration Crash
+On Windows dev systems running Next.js 15.5+, a path serialization bug in the default DevTools (Segment Explorer) overlay can cause hydration to crash with:
+`TypeError: __webpack_modules__[moduleId] is not a function`
+
+**Resolution:**
+The project configuration in `next.config.mjs` has **`devIndicators: false`** enabled. This suppresses the buggy dev indicator overlay and prevents compiling crashes on Windows.
+
+### Widescreen Spacing Optimization
+To minimize excessive margins on wider displays, the application's page containers have been standardized to a maximum width of **`1600px`** (`max-w-[1600px]`), allowing operational tables, POS cart grids, and financial reports to utilize space efficiently.
+
+---
+
 ## 💻 Developer Command Registry
 
 All of these run from the repo root.

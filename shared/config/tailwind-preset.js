@@ -13,18 +13,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // PRIMARY — Leaf Green (raw scale, kept for text-green-600 etc.)
+        // PRIMARY — Brand Teal/Cyan matching logo (overriding green for seamless utility transition)
         green: {
-          50: "#F0FDF4",
-          100: "#DCFCE7",
-          200: "#BBF7D0",
-          300: "#86EFAC",
-          400: "#4ADE80",
-          500: "#22C55E",
-          600: "#16A34A",
-          700: "#15803D",
-          800: "#166534",
-          900: "#14532D",
+          50: "#F0FDFA",
+          100: "#CCFBF1",
+          200: "#99F6E4",
+          300: "#5EEAD4",
+          400: "#2DD4BF",
+          500: "#14B8A6",
+          600: "#0D9488",
+          700: "#0F766E",
+          800: "#115E59",
+          900: "#134E4A",
+        },
+        emerald: {
+          50: "#F0FDFA",
+          100: "#CCFBF1",
+          200: "#99F6E4",
+          300: "#5EEAD4",
+          400: "#2DD4BF",
+          500: "#14B8A6",
+          600: "#0D9488",
+          700: "#0F766E",
+          800: "#115E59",
+          900: "#134E4A",
         },
         // SECONDARY — Red (raw scale, used sparingly)
         red: {
@@ -73,11 +85,11 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
 
-        // Money / status semantics (green dominant, red for attention)
-        success: "#22C55E",
+        // Money / status semantics (teal dominant, red for attention)
+        success: "#14B8A6",
         warning: "#F59E0B",
         info: "#3B82F6",
-        receivable: "#16A34A", // customers owe you (positive)
+        receivable: "#0D9488", // customers owe you (positive)
         payable: "#EF4444", // you owe / overdue (attention)
       },
       borderRadius: {
