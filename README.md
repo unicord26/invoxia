@@ -8,9 +8,8 @@
   </p>
 
   <p align="center">
-    <a href="https://turbo.build/"><img src="https://img.shields.io/badge/Monorepo-Turborepo-EF4444?style=for-the-badge&logo=turborepo" alt="Turborepo" /></a>
     <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Frontend-Next.js%2015-000000?style=for-the-badge&logo=nextdotjs" alt="Next.js" /></a>
-    <a href="https://expressjs.com/"><img src="https://img.shields.io/badge/Backend-Express%204-000000?style=for-the-badge&logo=express" alt="Express" /></a>
+    <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/Backend-NestJS%2011-E0234E?style=for-the-badge&logo=nestjs" alt="NestJS" /></a>
     <a href="https://prisma.io/"><img src="https://img.shields.io/badge/ORM-Prisma-2D3748?style=for-the-badge&logo=prisma" alt="Prisma" /></a>
     <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Services-Supabase-3ECF8E?style=for-the-badge&logo=supabase" alt="Supabase" /></a>
   </p>
@@ -34,7 +33,7 @@ Invoixe is a comprehensive desktop-first and mobile-responsive billing platform 
 
 ## 📁 Monorepo Workspace Directory
 
-Invoixe is organized as a unified monorepo leveraging npm workspaces and Turborepo:
+Invoixe is organized as a unified monorepo leveraging npm workspaces:
 
 Every folder under `client/`, `server/`, and `shared/` is an npm workspace. The
 folder name maps to the package name you see in imports — `shared/core` is
@@ -49,10 +48,11 @@ folder name maps to the package name you see in imports — `shared/core` is
 │       ├── lib/             #   Browser-side helpers: API client, Supabase, CSV, nav
 │       └── public/          #   Static assets served at the site root
 ├── server/
-│   ├── api/                 # @invoixe/api  — Express REST API
+│   ├── api/                 # @invoixe/api  — NestJS REST API
 │   │   └── src/
-│   │       ├── routes/      #   One file per resource; mounted in src/index.ts
-│   │       └── lib/         #   Auth, tenancy, ledger, numbering, stock helpers
+│   │       ├── <resource>/  #   One module per resource (controller + service)
+│   │       ├── common/      #   Prisma module, Supabase auth guard, Zod validation pipe
+│   │       └── lib/         #   Auth types, tenancy, ledger, numbering, stock helpers
 │   ├── db/                  # @invoixe/db   — Prisma client, re-exported for both sides
 │   └── prisma/              #   schema.prisma + rls.sql (row-level security policies)
 ├── shared/
@@ -60,12 +60,11 @@ folder name maps to the package name you see in imports — `shared/core` is
 │   ├── types/               # @invoixe/types  — Zod schemas + the types inferred from them
 │   └── config/              # @invoixe/config — Shared Tailwind preset & tsconfig base
 ├── scripts/                 # Repo maintenance scripts (frees dev ports before `npm run dev`)
-├── package.json             # Workspace definitions & root scripts
-└── turbo.json               # Task pipeline & caching rules
+└── package.json             # Workspace definitions & root scripts
 ```
 
 **Where do I put a change?** A new screen goes in `client/web/app/<route>/page.tsx`.
-A new endpoint goes in `server/api/src/routes/`. Anything both sides must agree on —
+A new endpoint goes in a module under `server/api/src/<resource>/`. Anything both sides must agree on —
 a schema, a tax rule, a currency helper — belongs in `shared/`, never duplicated across
 the two.
 
@@ -84,13 +83,13 @@ graph TD
   classDef externalStyle fill:#7c2d12,stroke:#ea580c,stroke-width:2px,color:#fff;
 
   User((Retailer / SME User)) -->|Uses Client UI| WebApp[Next.js 15 Client app]
-  WebApp -->|HTTPS REST requests| ExpressAPI[Express API Backend]
+  WebApp -->|HTTPS REST requests| NestAPI[NestJS API Backend]
   WebApp -->|Direct media upload & session state| Supabase[Supabase Platform]
-  ExpressAPI -->|Validates session tokens| Supabase
-  ExpressAPI -->|Executes queries| DB[(PostgreSQL Database)]
+  NestAPI -->|Validates session tokens| Supabase
+  NestAPI -->|Executes queries| DB[(PostgreSQL Database)]
 
   class WebApp clientStyle;
-  class ExpressAPI apiStyle;
+  class NestAPI apiStyle;
   class DB dbStyle;
   class Supabase externalStyle;
 ```
@@ -107,7 +106,7 @@ sequenceDiagram
   actor User as SME User
   participant Client as Next.js Client
   participant Supabase as Supabase Auth
-  participant API as Express API
+  participant API as NestJS API
   participant DB as Postgres (Prisma)
 
   User->>Client: Enters credentials (username, password)
@@ -199,7 +198,7 @@ npm run db:generate
 ```
 
 ### 3. Launch Development Workspaces
-Start Next.js frontend (port `3000`) and Express API backend (port `5000`) simultaneously:
+Start Next.js frontend (port `3000`) and NestJS API backend (port `5000`) simultaneously:
 ```bash
 npm run dev
 ```
@@ -216,7 +215,7 @@ All of these run from the repo root.
 | :--- | :--- | :--- |
 | `npm run dev` | Web + API | Starts both dev servers; frees ports `3000`/`5000` first |
 | `npm run dev:client` | `@invoixe/web` | Next.js dev server on port `3000` |
-| `npm run dev:server` | `@invoixe/api` | Express dev server on port `5000` |
+| `npm run dev:server` | `@invoixe/api` | NestJS dev server on port `5000` |
 | `npm run build` | All workspaces | Production build, in dependency order |
 | `npm run typecheck` | All workspaces | Type-checks every workspace |
 | `npm test` | `@invoixe/core` | Vitest suite for the GST tax engine |

@@ -1,4 +1,4 @@
-// Thin fetch client for the Leafx Express API. Attaches the Supabase access token.
+// Thin fetch client for the Invoixe NestJS API. Attaches the Supabase access token.
 import { supabase } from "./supabase";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
