@@ -1,7 +1,7 @@
-# 🍃 Leafx — Modern GST Billing & Inventory Suite
+# 🍃 Invoixe — Modern GST Billing & Inventory Suite
 
 <div align="center">
-  <img src="client/web/public/logos.png" alt="Leafx Logo" width="160" height="160" style="border-radius: 50%; box-shadow: 0 10px 25px rgba(0,0,0,0.15);" />
+  <img src="client/web/public/logo.png" alt="Invoixe Logo" width="160" height="160" style="border-radius: 50%; box-shadow: 0 10px 25px rgba(0,0,0,0.15);" />
   
   <p align="center">
     <strong>A premium, multi-tenant GST Billing, POS, Accounting & Inventory platform for Indian SMEs.</strong>
@@ -18,9 +18,9 @@
 
 ---
 
-## 🚀 Welcome to Leafx
+## 🚀 Welcome to Invoixe
 
-Leafx is a comprehensive desktop-first and mobile-responsive billing platform designed to digitize Indian small and medium enterprises (SMEs). Inspired by the features of Vyapar, Leafx simplifies retail invoicing, wholesale trade, inventory tracking, and GST reporting.
+Invoixe is a comprehensive desktop-first and mobile-responsive billing platform designed to digitize Indian small and medium enterprises (SMEs). Inspired by the features of Vyapar, Invoixe simplifies retail invoicing, wholesale trade, inventory tracking, and GST reporting.
 
 ### 🌟 Core Product Features
 
@@ -34,26 +34,46 @@ Leafx is a comprehensive desktop-first and mobile-responsive billing platform de
 
 ## 📁 Monorepo Workspace Directory
 
-Leafx is organized as a unified monorepo leveraging npm workspaces and Turborepo:
+Invoixe is organized as a unified monorepo leveraging npm workspaces and Turborepo:
+
+Every folder under `client/`, `server/`, and `shared/` is an npm workspace. The
+folder name maps to the package name you see in imports — `shared/core` is
+`@invoixe/core`, and so on.
 
 ```text
 ├── client/
-│   └── web/                 # Next.js 15 Web Application (Dashboard, POS, Ledgers)
+│   └── web/                 # @invoixe/web   — Next.js 15 app (Dashboard, POS, Ledgers)
+│       ├── app/             #   Routes (App Router); each folder is a URL segment
+│       ├── components/      #   App components (kebab-case files)
+│       │   └── ui/          #   Vendored shadcn/ui primitives — regenerated, avoid hand-editing
+│       ├── lib/             #   Browser-side helpers: API client, Supabase, CSV, nav
+│       └── public/          #   Static assets served at the site root
 ├── server/
-│   └── api/                 # Node.js + Express REST API Server
+│   ├── api/                 # @invoixe/api  — Express REST API
+│   │   └── src/
+│   │       ├── routes/      #   One file per resource; mounted in src/index.ts
+│   │       └── lib/         #   Auth, tenancy, ledger, numbering, stock helpers
+│   ├── db/                  # @invoixe/db   — Prisma client, re-exported for both sides
+│   └── prisma/              #   schema.prisma + rls.sql (row-level security policies)
 ├── shared/
-│   ├── core/                # Core calculation utilities & GST tax computation engine
-│   ├── db/                  # Shared database models, Prisma client exports & scripts
-│   └── types/               # Common Type definitions & Zod validation schemas
-├── package.json             # Monorepo workspaces definition
-└── turbo.json               # Pipeline build rules & caching configurations
+│   ├── core/                # @invoixe/core   — GST tax engine & money math (paise integers)
+│   ├── types/               # @invoixe/types  — Zod schemas + the types inferred from them
+│   └── config/              # @invoixe/config — Shared Tailwind preset & tsconfig base
+├── scripts/                 # Repo maintenance scripts (frees dev ports before `npm run dev`)
+├── package.json             # Workspace definitions & root scripts
+└── turbo.json               # Task pipeline & caching rules
 ```
+
+**Where do I put a change?** A new screen goes in `client/web/app/<route>/page.tsx`.
+A new endpoint goes in `server/api/src/routes/`. Anything both sides must agree on —
+a schema, a tax rule, a currency helper — belongs in `shared/`, never duplicated across
+the two.
 
 ---
 
 ## 🛠️ System Architecture
 
-Leafx utilizes a split-client server framework optimized for cloud synchronization and offline resiliency:
+Invoixe utilizes a split-client server framework optimized for cloud synchronization and offline resiliency:
 
 ```mermaid
 graph TD
@@ -114,7 +134,7 @@ graph LR
   classDef decisionStyle fill:#b45309,stroke:#d97706,stroke-width:2px,color:#fff;
   classDef actionStyle fill:#047857,stroke:#059669,stroke-width:2px,color:#fff;
 
-  Input[Invoice Line Items & Addresses] --> Core[@leafx/core Tax Engine]
+  Input[Invoice Line Items & Addresses] --> Core[@invoixe/core Tax Engine]
   Core --> Match{Buyer-Seller State Match?}
   Match -->|Yes: Intrastate| Intra[Split Tax Rate: CGST + SGST]
   Match -->|No: Interstate| Inter[Apply Tax Rate: IGST]
@@ -164,7 +184,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5..."
 
 ## 🛠️ Getting Started & Installation
 
-Follow these instructions to run Leafx locally on your machine:
+Follow these instructions to run Invoixe locally on your machine:
 
 ### 1. Install Node Dependencies
 Use the workspace orchestrator to install package dependencies:
@@ -190,13 +210,16 @@ Visit **[http://localhost:3000](http://localhost:3000)** in your browser, enter 
 
 ## 💻 Developer Command Registry
 
-| Workspace Script | Context Scope | Description |
+All of these run from the repo root.
+
+| Script | Runs | Description |
 | :--- | :--- | :--- |
-| `npm run dev` | Monorepo Root | Compiles and starts both Web and API concurrently |
-| `npm run dev:client` | `client/web` | Launches Next.js dev server on port `3000` |
-| `npm run dev:server` | `server/api` | Launches Express server on port `5000` |
-| `npm run build` | Monorepo Root | Bundles all static packages for production environments |
-| `npm run typecheck` | Monorepo Root | Performs workspace type verification |
-| `npm test` | `shared/core` | Runs jest test runner on calculation tax logic |
-| `npm run db:push` | `shared/db` | Pushes local schema modifications directly to the active DB |
-| `npm run db:studio` | `shared/db` | Opens the Prisma database explorer GUI on port `5555` |
+| `npm run dev` | Web + API | Starts both dev servers; frees ports `3000`/`5000` first |
+| `npm run dev:client` | `@invoixe/web` | Next.js dev server on port `3000` |
+| `npm run dev:server` | `@invoixe/api` | Express dev server on port `5000` |
+| `npm run build` | All workspaces | Production build, in dependency order |
+| `npm run typecheck` | All workspaces | Type-checks every workspace |
+| `npm test` | `@invoixe/core` | Vitest suite for the GST tax engine |
+| `npm run db:generate` | `server/prisma` | Regenerates the Prisma client — run after schema edits |
+| `npm run db:push` | `server/prisma` | Pushes schema changes straight to the active database |
+| `npm run db:studio` | `server/prisma` | Opens Prisma Studio on port `5555` |

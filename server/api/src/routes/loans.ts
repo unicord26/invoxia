@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createLoanSchema, createLoanEntrySchema } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { createLoanSchema, createLoanEntrySchema } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 
 export const loansRouter = Router();

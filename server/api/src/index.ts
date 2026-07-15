@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { prisma } from "@leafx/db";
+import { prisma } from "@invoixe/db";
 import { partiesRouter } from "./routes/parties";
 import { itemsRouter } from "./routes/items";
 import { invoicesRouter } from "./routes/invoices";
@@ -76,7 +76,7 @@ app.get("/api/health", async (_req, res) => {
   const supabase = await supabaseHealth();
   res.status(supabase.db === "connected" ? 200 : 503).json({
     ok: supabase.db === "connected",
-    service: "invoxia-api",
+    service: "invoixe-api",
     supabase,
     time: new Date().toISOString(),
   });
@@ -106,8 +106,8 @@ app.use("/api/gst", requireAuth, gstRouter);
 app.use("/api", requireAuth, manufacturingRouter); // /api/bom, /api/production, /api/godowns
 
 const PORT = Number(process.env.API_PORT ?? 5000);
-app.listen(PORT, async () => {
-  console.log(`✓ Invoxia API listening on http://localhost:${PORT}`);
+const server = app.listen(PORT, async () => {
+  console.log(`✓ Invoixe API listening on http://localhost:${PORT}`);
   // Startup handshake: confirm the Supabase connection before serving traffic.
   const sb = await supabaseHealth();
   if (sb.db === "connected") {
@@ -116,3 +116,20 @@ app.listen(PORT, async () => {
     console.error(`✗ Supabase Postgres UNREACHABLE: ${sb.error}`);
   }
 });
+
+server.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `\n✗ Port ${PORT} is already in use — an old API process is still holding it.\n` +
+        `  Run \`npm run dev:clean\` from the repo root to free it, then start again.\n`
+    );
+    process.exit(1);
+  }
+  throw err;
+});
+
+// tsx watch restarts by signalling this process; release the port so the next
+// start doesn't hit EADDRINUSE against our own previous run.
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, () => server.close(() => process.exit(0)));
+}

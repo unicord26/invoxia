@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createPaymentSchema } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { createPaymentSchema } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 import { nextNumber } from "../lib/numbering";
 

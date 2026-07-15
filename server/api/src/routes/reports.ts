@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
+import { prisma } from "@invoixe/db";
 import { getUserBusinessId } from "../lib/business";
 import { signedBalanceDelta } from "../lib/ledger";
 import { getStockMap } from "../lib/stock";

@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { rupeesToPaise } from "@leafx/core";
+import { rupeesToPaise } from "@invoixe/core";
 import { api } from "../lib/api";
 import { parseCsv } from "../lib/csv";
 import { Button } from "@/components/ui/button";

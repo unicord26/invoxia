@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Item } from "@leafx/types";
+import type { Item } from "@invoixe/types";
 import { api } from "../../lib/api";
 
 type Bom = { itemId: string; lines: { rawItemId: string; qty: number }[] };
@@ -39,7 +39,7 @@ export default function ManufacturingPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoxia</Link>
+      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoixe</Link>
         <h1 className="text-2xl font-extrabold text-gray-900">Manufacturing</h1>
         <p className="text-sm text-gray-500">Bill of materials &amp; production</p></header>
 

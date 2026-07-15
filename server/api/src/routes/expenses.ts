@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createExpenseSchema } from "@leafx/types";
-import { computeLine } from "@leafx/core";
+import { prisma } from "@invoixe/db";
+import { createExpenseSchema } from "@invoixe/types";
+import { computeLine } from "@invoixe/core";
 import { getUserBusinessId } from "../lib/business";
 import { nextNumber } from "../lib/numbering";
 

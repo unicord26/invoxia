@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { formatINR } from "@leafx/core";
+import { formatINR } from "@invoixe/core";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createPartySchema } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { createPartySchema } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 import { signedBalanceDelta } from "../lib/ledger";
 

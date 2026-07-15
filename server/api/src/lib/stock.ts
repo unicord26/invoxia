@@ -1,4 +1,4 @@
-import { prisma } from "@leafx/db";
+import { prisma } from "@invoixe/db";
 
 type LineRef = { itemId?: string | null; qty: number };
 

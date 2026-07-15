@@ -1,4 +1,4 @@
-import { prisma } from "@leafx/db";
+import { prisma } from "@invoixe/db";
 
 /**
  * Atomically reserve the next number in a business's series.

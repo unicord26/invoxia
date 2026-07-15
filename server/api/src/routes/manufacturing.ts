@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { stockTransferSchema } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { stockTransferSchema } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 
 export const manufacturingRouter = Router();

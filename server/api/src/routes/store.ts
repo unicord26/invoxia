@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
+import { prisma } from "@invoixe/db";
 
 // PUBLIC router (no auth) — a shareable online catalog for a business.
 export const storeRouter = Router();

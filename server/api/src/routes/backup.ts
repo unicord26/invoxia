@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createPartySchema, createItemSchema } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { createPartySchema, createItemSchema } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 
 export const backupRouter = Router();

@@ -9,7 +9,7 @@ import {
   DashboardActivity,
   DashboardAlerts,
   QuickActions
-} from "../components/DashboardMetrics";
+} from "@/components/dashboard-metrics";
 import { flattenLeaves } from "../lib/nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

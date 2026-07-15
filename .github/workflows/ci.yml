@@ -31,4 +31,4 @@ jobs:
         working-directory: server/api
 
       - name: Test (core tax engine)
-        run: npm test --workspace @leafx/core
+        run: npm test --workspace @invoixe/core

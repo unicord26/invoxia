@@ -3,8 +3,8 @@
 import { use } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { formatINR, inWordsINR } from "@leafx/core";
-import type { BusinessSettings } from "@leafx/types";
+import { formatINR, inWordsINR } from "@invoixe/core";
+import type { BusinessSettings } from "@invoixe/types";
 import { api } from "../../../lib/api";
 
 type Line = {

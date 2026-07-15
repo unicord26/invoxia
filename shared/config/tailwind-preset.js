@@ -1,7 +1,7 @@
 /**
  * Leafx Tailwind preset — shared design tokens.
  * Primary: Leaf Green (brand, positive money). Secondary: Red (dues, destructive, alerts).
- * Import into any app's tailwind.config: `presets: [require('@leafx/config/tailwind')]`.
+ * Import into any app's tailwind.config: `presets: [require('@invoixe/config/tailwind')]`.
  *
  * shadcn/ui semantic colors are driven by CSS variables (HSL) defined in the app's
  * globals.css; the raw `green`/`red` numeric scales stay for existing utility usage.

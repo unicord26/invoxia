@@ -950,10 +950,10 @@ export default function LoginPage() {
           <div className="lx-branding-header">
             <div className="lx-branding-logo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos.png" alt="Invoxia" />
+              <img src="/logo.png" alt="Invoixe" />
             </div>
             <div className="lx-branding-logo-text">
-              <h2>Invoxia</h2>
+              <h2>Invoixe</h2>
               <p>GST Billing &amp; Accounting</p>
             </div>
           </div>
@@ -962,7 +962,7 @@ export default function LoginPage() {
             <span className="lx-branding-tag">Seamless SME Operations</span>
             <h1 className="lx-branding-title">Simplify your invoicing &amp; bookkeeping.</h1>
             <p className="lx-branding-desc">
-              Join thousands of businesses who trust Invoxia to manage their GST returns, sales records, purchases, inventory, and clients.
+              Join thousands of businesses who trust Invoixe to manage their GST returns, sales records, purchases, inventory, and clients.
             </p>
 
             <div className="lx-feature-list">
@@ -982,7 +982,7 @@ export default function LoginPage() {
           </div>
 
           <div className="lx-branding-footer">
-            © {new Date().getFullYear()} Invoxia Technologies. All rights reserved.
+            © {new Date().getFullYear()} Invoixe Technologies. All rights reserved.
           </div>
         </div>
 
@@ -998,10 +998,10 @@ export default function LoginPage() {
             <div className="lx-card-header">
               <div className="lx-branding-logo" style={{ width: 40, height: 40, borderRadius: 10 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logos.png" alt="Invoxia" />
+                <img src="/logo.png" alt="Invoixe" />
               </div>
               <div className="lx-branding-logo-text">
-                <h2 style={{ fontSize: 16, color: "#111827" }}>Invoxia</h2>
+                <h2 style={{ fontSize: 16, color: "#111827" }}>Invoixe</h2>
                 <p style={{ fontSize: 10 }}>GST Billing &amp; Accounting</p>
               </div>
             </div>
@@ -1295,7 +1295,7 @@ export default function LoginPage() {
               )}
 
               <p className="lx-toggle">
-                {mode === "in" ? "New to Invoxia?" : "Already have an account?"}
+                {mode === "in" ? "New to Invoixe?" : "Already have an account?"}
                 <button
                   type="button"
                   onClick={() => {

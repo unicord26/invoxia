@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createChequeSchema, chequeStatusUpdateSchema } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { createChequeSchema, chequeStatusUpdateSchema } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 
 export const chequesRouter = Router();

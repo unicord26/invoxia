@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { formatINR } from "@leafx/core";
+import { formatINR } from "@invoixe/core";
 import { api } from "../../../../lib/api";
 
 type Line = { lineNo: number; description: string; qty: number; rate: number; lineTotal: number };

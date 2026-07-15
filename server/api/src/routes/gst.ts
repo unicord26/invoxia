@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { gstinSchema, stateNameFromGstin } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { gstinSchema, stateNameFromGstin } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 
 export const gstRouter = Router();

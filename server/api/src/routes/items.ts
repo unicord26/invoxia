@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createItemSchema, createBatchSchema, createSerialSchema } from "@leafx/types";
+import { prisma } from "@invoixe/db";
+import { createItemSchema, createBatchSchema, createSerialSchema } from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 import { getStockMap } from "../lib/stock";
 

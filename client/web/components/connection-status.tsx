@@ -20,16 +20,16 @@ export function ConnectionStatus() {
         if (cancelled) return;
         if (res.ok && body?.ok) {
           console.log(
-            `%c✓ Connected to Invoxia API @ ${API} — Supabase ${body.supabase?.db} (${body.supabase?.latencyMs}ms)`,
+            `%c✓ Connected to Invoixe API @ ${API} — Supabase ${body.supabase?.db} (${body.supabase?.latencyMs}ms)`,
             "color:#16a34a;font-weight:600"
           );
         } else {
-          console.warn("⚠ Invoxia API reachable but Supabase is unhealthy:", body?.supabase);
+          console.warn("⚠ Invoixe API reachable but Supabase is unhealthy:", body?.supabase);
           toast.warning("Backend database is unavailable — some features may not work.");
         }
       } catch (e) {
         if (cancelled) return;
-        console.error(`✗ Cannot reach Invoxia API at ${API}. Is the server running?`, e);
+        console.error(`✗ Cannot reach Invoixe API at ${API}. Is the server running?`, e);
         toast.error(`Cannot reach the server at ${API}. Is it running on port 5000?`);
       }
     })();

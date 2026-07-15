@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formatINR, rupeesToPaise } from "@leafx/core";
+import { formatINR, rupeesToPaise } from "@invoixe/core";
 import { api } from "../../../lib/api";
 
 type Entry = {

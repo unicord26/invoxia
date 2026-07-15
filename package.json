@@ -1,8 +1,8 @@
 {
-  "name": "leafx",
+  "name": "invoixe",
   "version": "0.0.0",
   "private": true,
-  "description": "Leafx — GST billing, accounting & inventory platform",
+  "description": "Invoixe — GST billing, accounting & inventory platform",
   "packageManager": "npm@11.6.1",
   "workspaces": [
     "client/*",
@@ -10,20 +10,23 @@
     "shared/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "dev:client": "turbo run dev --filter=@leafx/web",
-    "dev:server": "turbo run dev --filter=@leafx/api",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "dev:clean": "node scripts/free-ports.mjs 3000 5000",
+    "dev": "concurrently -n api,web -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "predev:client": "node scripts/free-ports.mjs 3000",
+    "dev:client": "npm run dev --workspace @invoixe/web",
+    "predev:server": "node scripts/free-ports.mjs 5000",
+    "dev:server": "npm run dev --workspace @invoixe/api",
+    "build": "npm run build --workspace @invoixe/api && npm run build --workspace @invoixe/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "db:generate": "prisma generate --schema server/prisma/schema.prisma",
     "db:push": "prisma db push --schema server/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema server/prisma/schema.prisma",
     "db:studio": "prisma studio --schema server/prisma/schema.prisma"
   },
   "devDependencies": {
-    "turbo": "^2.10.5",
+    "concurrently": "^10.0.3",
     "typescript": "^5.7.2"
   },
   "engines": {

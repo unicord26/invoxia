@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { rupeesToPaise, paiseToRupees, type Paise } from "@leafx/core";
+import { rupeesToPaise, paiseToRupees, type Paise } from "@invoixe/core";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 

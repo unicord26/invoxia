@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { computeInvoice, formatINR, rupeesToPaise } from "@leafx/core";
-import { GST_RATES, type Item, type Party } from "@leafx/types";
+import { computeInvoice, formatINR, rupeesToPaise } from "@invoixe/core";
+import { GST_RATES, type Item, type Party } from "@invoixe/types";
 import { api } from "../../../lib/api";
 
 type Business = { stateCode: string | null };

@@ -1,5 +1,5 @@
 {
-  "name": "@leafx/web",
+  "name": "@invoixe/web",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -11,9 +11,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
-    "@leafx/core": "*",
-    "@leafx/types": "*",
-    "@leafx/ui": "*",
+    "@invoixe/core": "*",
+    "@invoixe/types": "*",
     "@radix-ui/react-checkbox": "^1.3.7",
     "@radix-ui/react-collapsible": "^1.1.16",
     "@radix-ui/react-dialog": "^1.1.19",

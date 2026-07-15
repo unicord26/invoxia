@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
+import { prisma } from "@invoixe/db";
 import { supabaseAdmin } from "../lib/supabase";
 
 // PUBLIC auth router (no requireAuth).

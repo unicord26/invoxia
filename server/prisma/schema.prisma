@@ -53,7 +53,7 @@ model Business {
   stateName      String?
   businessCategory String?
   booksBeginDate DateTime?
-  settings     Json? // normalized preferences blob (see settingsSchema in @leafx/types)
+  settings     Json? // normalized preferences blob (see settingsSchema in @invoixe/types)
   memberships  Membership[]
   parties      Party[]
   items        Item[]

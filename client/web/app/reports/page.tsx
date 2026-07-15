@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { formatINR } from "@leafx/core";
+import { formatINR } from "@invoixe/core";
 import { api } from "../../lib/api";
 
 type Summary = { sales: number; purchases: number; expenses: number; outputTax: number; inputTax: number; grossProfit: number; receivables: number; payables: number };
@@ -28,7 +28,7 @@ export default function ReportsPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoxia</Link>
+      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoixe</Link>
         <h1 className="text-2xl font-extrabold text-gray-900">Reports</h1></header>
 
       {/* headline */}

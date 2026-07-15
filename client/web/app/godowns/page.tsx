@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, ArrowRight, Warehouse } from "lucide-react";
 import { toast } from "sonner";
-import type { Item } from "@leafx/types";
+import type { Item } from "@invoixe/types";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/page-header";
 import { Combobox, type ComboOption } from "../../components/combobox";

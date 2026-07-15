@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
+import { prisma } from "@invoixe/db";
 import {
   updateBusinessSchema,
   settingsSchema,
   settingsPatchSchema,
   updateSeriesSchema,
   NUMBER_SERIES,
-} from "@leafx/types";
+} from "@invoixe/types";
 import { getUserBusinessId } from "../lib/business";
 
 export const businessRouter = Router();

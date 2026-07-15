@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formatINR, rupeesToPaise } from "@leafx/core";
-import { GST_RATES } from "@leafx/types";
+import { formatINR, rupeesToPaise } from "@invoixe/core";
+import { GST_RATES } from "@invoixe/types";
 import { api } from "../../lib/api";
 
 type Row = { id: string; number: string; date: string; category: string | null; paymentMode: string | null; grandTotal: number };
@@ -25,7 +25,7 @@ export default function ExpensesPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoxia</Link>
+      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoixe</Link>
         <h1 className="text-2xl font-extrabold text-gray-900">Expenses</h1></header>
 
       <form onSubmit={(e) => { e.preventDefault(); if (Number(amount) > 0) add.mutate(); }} className="mb-8 grid gap-3 rounded-xl border border-green-200 bg-white p-4 sm:grid-cols-4">

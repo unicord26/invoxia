@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formatINR, rupeesToPaise, paiseToRupees } from "@leafx/core";
+import { formatINR, rupeesToPaise, paiseToRupees } from "@invoixe/core";
 import { api } from "../../lib/api";
 import {
   Landmark,
@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { CreditCardForm, type CardState } from "@/components/ui/credit-card-form";
+import { CreditCardForm, type CardState } from "@/components/credit-card-form";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

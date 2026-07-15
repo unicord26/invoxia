@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { BusinessSettings } from "@leafx/types";
+import type { BusinessSettings } from "@invoixe/types";
 import { api } from "../../lib/api";
 import { PageHeader } from "../../components/page-header";
 import { ImageUpload } from "../../components/image-upload";

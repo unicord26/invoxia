@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { computeInvoice, formatINR, rupeesToPaise } from "@leafx/core";
-import { GST_RATES, type DocumentType, type Item, type Party } from "@leafx/types";
+import { computeInvoice, formatINR, rupeesToPaise } from "@invoixe/core";
+import { GST_RATES, type DocumentType, type Item, type Party } from "@invoixe/types";
 import { api } from "../../lib/api";
 
 const TABS: { type: DocumentType; label: string; supplier: boolean; convertible: boolean }[] = [
@@ -66,7 +66,7 @@ export default function DocumentsPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <header className="mb-6"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoxia</Link>
+      <header className="mb-6"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoixe</Link>
         <h1 className="text-2xl font-extrabold text-gray-900">Documents</h1></header>
 
       <div className="mb-6 flex flex-wrap gap-2">

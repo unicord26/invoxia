@@ -38,7 +38,7 @@ export default function GstPage() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
-      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoxia</Link>
+      <header className="mb-8"><Link href="/" className="text-sm text-green-700 hover:underline">← Invoixe</Link>
         <h1 className="text-2xl font-extrabold text-gray-900">GST Compliance</h1>
         <p className="text-sm text-gray-500">GSTR-1 export &amp; e-invoice payloads</p></header>
 

@@ -22,7 +22,7 @@ import {
   Info,
   ExternalLink
 } from "lucide-react";
-import { formatINR } from "@leafx/core";
+import { formatINR } from "@invoixe/core";
 import { api } from "../lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";

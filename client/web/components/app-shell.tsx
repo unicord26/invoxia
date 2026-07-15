@@ -123,10 +123,10 @@ function SidebarContent({
         <Link href="/" onClick={onNavigate} className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-white/5 border border-white/10">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logos.png" alt="Invoxia" className="w-full h-full object-cover" />
+            <img src="/logo.png" alt="Invoixe" className="w-full h-full object-cover" />
           </div>
           <div>
-            <h2 className="font-bold text-white text-lg tracking-tight leading-tight">Invoxia</h2>
+            <h2 className="font-bold text-white text-lg tracking-tight leading-tight">Invoixe</h2>
             <p className="text-[11px] text-green-400 font-medium">Billing Workspace</p>
           </div>
         </Link>
@@ -240,8 +240,8 @@ export function AppShell({
         </Sheet>
         <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos.png" alt="Invoxia" className="w-7 h-7" />
-          <span className="font-bold text-base tracking-tight">Invoxia</span>
+          <img src="/logo.png" alt="Invoixe" className="w-7 h-7" />
+          <span className="font-bold text-base tracking-tight">Invoixe</span>
         </div>
       </header>
 

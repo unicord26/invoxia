@@ -1,5 +1,5 @@
 {
-  "name": "@leafx/core",
+  "name": "@invoixe/core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@leafx/types": "*"
+    "@invoixe/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

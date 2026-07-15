@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { prisma } from "@leafx/db";
-import { createPurchaseSchema } from "@leafx/types";
-import { computeInvoice } from "@leafx/core";
+import { prisma } from "@invoixe/db";
+import { createPurchaseSchema } from "@invoixe/types";
+import { computeInvoice } from "@invoixe/core";
 import { getUserBusinessId } from "../lib/business";
 import { nextNumber } from "../lib/numbering";
 import { recordStock } from "../lib/stock";
