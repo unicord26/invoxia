@@ -13,6 +13,7 @@ out/
 .env
 .env.*
 !.env.example
+secret.md
 
 # db
 server/db/prisma/*.db
