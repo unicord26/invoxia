@@ -255,7 +255,10 @@ All of these run from the repo root.
 | `npm run build` | All workspaces | Production build (API bundle, then Next) |
 | `npm start --workspace @invoixe/api` | `@invoixe/api` | Runs the built API from `dist/main.js` |
 | `npm run typecheck` | All workspaces | Type-checks every workspace |
-| `npm test` | `@invoixe/core` | Vitest suite for the GST tax engine |
+| `npm run lint` | All workspaces | Lints source files across all workspaces |
+| `npm test` | All workspaces | Runs Vitest suites for `@invoixe/core` and `@invoixe/api` |
 | `npm run db:generate` | `server/prisma` | Regenerates the Prisma client — run after schema edits |
 | `npm run db:push` | `server/prisma` | Pushes schema changes straight to the active database |
+| `npm run db:migrate` | `server/prisma` | Runs database migrations |
+| `npm run db:rls` | `server/prisma` | Executes the row-level security SQL policy script |
 | `npm run db:studio` | `server/prisma` | Opens Prisma Studio on port `5555` |
