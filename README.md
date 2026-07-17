@@ -28,3 +28,34 @@ Invoixe is a comprehensive desktop-first and mobile-responsive billing platform 
 *   **📦 Advanced Inventory Engine:** Define products and services with tax-inclusive/exclusive pricing structures, assign custom SKUs/codes, manage low-stock thresholds, and track batch expiries or unique serial numbers.
 *   **👥 Dual-Party Ledger:** Maintain active customer and supplier profiles, set credit limits or grace periods, track opening balances, verify GSTINs, and generate ledger balance statements.
 *   **🏢 Multi-Tenant Workspaces:** Create and toggle between multiple business profiles securely. Each tenant has isolated database references, dedicated storage buckets, configuration rules, and staff access controls.
+
+---
+
+## 📁 Monorepo Workspace Directory
+
+Invoixe is organized as a unified monorepo leveraging npm workspaces:
+
+```text
+├── client/
+│   └── web/                 # @invoixe/web   — Next.js 15 app (Dashboard, POS, Ledgers)
+│       ├── app/             #   Routes (App Router); each folder is a URL segment
+│       ├── components/      #   App components (kebab-case files)
+│       │   └── ui/          #   Vendored shadcn/ui primitives
+│       ├── lib/             #   Browser-side helpers: API client, Supabase, CSV, nav
+│       └── public/          #   Static assets served at the site root
+├── server/
+│   ├── api/                 # @invoixe/api  — NestJS REST API
+│   │   ├── build.mjs        #   Production bundle configuration
+│   │   └── src/
+│   │       ├── <resource>/  #   One module per resource (controller + service)
+│   │       ├── common/      #   Prisma module, Supabase auth guard, Zod validation pipe
+│   │       └── lib/         #   Auth types, tenancy, ledger, numbering, stock helpers
+│   ├── db/                  # @invoixe/db   — Prisma client, re-exported for both sides
+│   └── prisma/              #   schema.prisma + rls.sql (row-level security policies)
+├── shared/
+│   ├── core/                # @invoixe/core   — GST tax engine & money math (paise integers)
+│   ├── types/               # @invoixe/types  — Zod schemas + the types inferred from them
+│   └── config/              # @invoixe/config — Shared Tailwind preset & tsconfig base
+├── scripts/                 # Repo maintenance scripts
+└── package.json             # Workspace definitions & root scripts
+```
