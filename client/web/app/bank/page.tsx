@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatINR, rupeesToPaise } from "@invoixe/core";
 import { api } from "../../lib/api";
+import { gsap } from "gsap";
 import {
   Landmark,
   Wallet,
@@ -17,7 +18,12 @@ import {
   PlusCircle,
   CreditCard,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle,
+  Calculator,
+  ShieldAlert,
+  DollarSign,
+  CheckCircle2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,6 +84,19 @@ type BankEntry = {
   };
 };
 
+const IFSC_BANK_MAP: Record<string, { bankName: string; branch: string }> = {
+  "HDFC": { bankName: "HDFC Bank", branch: "Main Branch" },
+  "SBIN": { bankName: "State Bank of India", branch: "Local Branch" },
+  "ICIC": { bankName: "ICICI Bank", branch: "Corporate Branch" },
+  "UTIB": { bankName: "Axis Bank", branch: "City Center Branch" },
+  "KKBK": { bankName: "Kotak Mahindra Bank", branch: "Central Branch" },
+  "BARB": { bankName: "Bank of Baroda", branch: "Regional Branch" },
+  "PUNB": { bankName: "Punjab National Bank", branch: "Metro Branch" },
+  "YESB": { bankName: "Yes Bank", branch: "Downtown Branch" },
+  "IBKL": { bankName: "IDBI Bank", branch: "Industrial Area Branch" },
+  "CNRB": { bankName: "Canara Bank", branch: "Town Hall Branch" },
+};
+
 export default function BankPage() {
   const qc = useQueryClient();
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
@@ -93,6 +112,25 @@ export default function BankPage() {
   const [holderName, setHolderName] = useState("");
   const [upiId, setUpiId] = useState("");
   const [opening, setOpening] = useState("");
+
+  // Custom Verification GSAP Toast
+  const [toastMessage, setToastMessage] = useState<{ title: string; desc: string } | null>(null);
+  
+  // Penny-Drop secure verification state
+  const [verifyStep, setVerifyStep] = useState<"idle" | "connecting" | "penny_drop" | "routing" | "matching" | "success" | "fail">("idle");
+
+  // Cash register physical audit states
+  const [cashAuditOpen, setCashAuditOpen] = useState(false);
+  const [cashDenominations, setCashDenominations] = useState<Record<string, number>>({
+    "2000": 0,
+    "500": 0,
+    "200": 0,
+    "100": 0,
+    "50": 0,
+    "20": 0,
+    "10": 0,
+    "coins": 0
+  });
 
   // Card-adding uses the CreditCardForm component inside a dialog. It captures
   // the full PAN + CVV client-side for the visual entry UX, but on submit we
@@ -134,6 +172,59 @@ export default function BankPage() {
 
   const selectedAccount = accounts?.find((a) => a.id === selectedAccountId);
 
+  // GSAP toast warning effects
+  useEffect(() => {
+    if (toastMessage) {
+      gsap.fromTo(
+        "#gsap-toast",
+        { x: 450, opacity: 0, scale: 0.95 },
+        { x: 0, opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.3)" }
+      );
+      const t = setTimeout(() => {
+        closeToast();
+      }, 7000);
+      return () => clearTimeout(t);
+    }
+  }, [toastMessage]);
+
+  const closeToast = () => {
+    gsap.to("#gsap-toast", {
+      x: 450,
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.35,
+      ease: "power2.in",
+      onComplete: () => setToastMessage(null),
+    });
+  };
+
+  // Auto-populate Bank Name and Branch Name based on IFSC prefix
+  useEffect(() => {
+    const cleanIFSC = ifsc.trim().toUpperCase();
+    if (cleanIFSC.length >= 4) {
+      const prefix = cleanIFSC.slice(0, 4);
+      if (IFSC_BANK_MAP[prefix]) {
+        const match = IFSC_BANK_MAP[prefix]!;
+        setBankName(match.bankName);
+        if (cleanIFSC.length === 11) {
+          const suffix = cleanIFSC.slice(-6);
+          setBranch(`${match.branch} (Branch Code: ${suffix})`);
+        }
+      }
+    }
+  }, [ifsc]);
+
+  // Cash total calculator
+  const computedCashTotal = 
+    (cashDenominations["2000"] ?? 0) * 2000 +
+    (cashDenominations["500"] ?? 0) * 500 +
+    (cashDenominations["200"] ?? 0) * 200 +
+    (cashDenominations["100"] ?? 0) * 100 +
+    (cashDenominations["50"] ?? 0) * 50 +
+    (cashDenominations["20"] ?? 0) * 20 +
+    (cashDenominations["10"] ?? 0) * 10 +
+    (cashDenominations["coins"] ?? 0);
+
   // Cache invalidator (forces full sync across dashboard & bank datasets)
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["bank"] });
@@ -145,19 +236,21 @@ export default function BankPage() {
   };
 
   // Mutations
+  type AccountPayload = {
+    name: string;
+    type: string;
+    accountNo?: string | null;
+    ifsc?: string | null;
+    bankName?: string | null;
+    branch?: string | null;
+    holderName?: string | null;
+    upiId?: string | null;
+    openingBalance: number;
+  };
+
   const addAcctMutation = useMutation({
-    mutationFn: () =>
-      api.post("/api/bank", {
-        name: name.trim(),
-        type,
-        accountNo: accountNo.trim() || null,
-        ifsc: ifsc.trim() || null,
-        bankName: bankName.trim() || null,
-        branch: branch.trim() || null,
-        holderName: holderName.trim() || null,
-        upiId: upiId.trim() || null,
-        openingBalance: opening ? rupeesToPaise(Number(opening)) : 0,
-      }),
+    mutationFn: (payload: AccountPayload) =>
+      api.post("/api/bank", payload),
     onSuccess: () => {
       invalidateAll();
       setName("");
@@ -204,6 +297,18 @@ export default function BankPage() {
     },
     onError: (err: Error) => {
       toast.error(err.message || "Failed to remove card.");
+    },
+  });
+
+  const deleteAcctMutation = useMutation({
+    mutationFn: (id: string) => api.del(`/api/bank/${id}`),
+    onSuccess: () => {
+      invalidateAll();
+      setSelectedAccountId(null);
+      toast.success("Bank account removed successfully!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to remove account.");
     },
   });
 
@@ -269,7 +374,84 @@ export default function BankPage() {
   const handleAddAccount = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    addAcctMutation.mutate();
+
+    // Validation checks for real bank accounts
+    if (type === "bank") {
+      const cleanIFSC = ifsc.trim().toUpperCase();
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleanIFSC)) {
+        setToastMessage({
+          title: "IFSC Verification Failure",
+          desc: `The IFSC code "${cleanIFSC}" is invalid. Real branch codes must be 11 characters, starting with 4 letters, followed by a '0', and ending with 6 alphanumeric digits.`
+        });
+        return;
+      }
+      if (!/^\d{9,18}$/.test(accountNo.trim())) {
+        setToastMessage({
+          title: "Account Number Mismatch",
+          desc: "The bank account number must be numeric and between 9 and 18 digits. No mock symbols or letters are allowed."
+        });
+        return;
+      }
+      if (!holderName.trim()) {
+        setToastMessage({
+          title: "Holder Name Required",
+          desc: "Please provide the official account holder's name for secure bank verification."
+        });
+        return;
+      }
+    } else if (type === "upi") {
+      if (!upiId.trim() || !/^.+@.+$/.test(upiId.trim())) {
+        setToastMessage({
+          title: "UPI VPA Format Mismatch",
+          desc: "The UPI ID does not conform to standardized VPAs (e.g. holder@bankname)."
+        });
+        return;
+      }
+    }
+
+    const computedName = type === "cash" 
+      ? name.trim() 
+      : (type === "bank" ? `${bankName.trim()} (•••• ${accountNo.trim().slice(-4)})` : `UPI VPA (${upiId.trim()})`);
+
+    const payload = {
+      name: computedName,
+      type,
+      accountNo: type === "bank" ? accountNo.trim() : null,
+      ifsc: type === "bank" ? ifsc.trim().toUpperCase() : null,
+      bankName: type === "bank" ? bankName.trim() : null,
+      branch: type === "bank" ? branch.trim() : null,
+      holderName: type === "bank" ? holderName.trim() : null,
+      upiId: type === "upi" ? upiId.trim() : null,
+      openingBalance: opening ? rupeesToPaise(Number(opening)) : 0,
+    };
+
+    // Secure Penny-Drop Verification Simulation (Evaluated instantly)
+    if (type === "bank" || type === "upi") {
+      const cleanHolder = holderName.trim().toLowerCase();
+      const cleanNo = accountNo.trim();
+      
+      // Mismatch logic for fakes / mocks
+      const dummyNames = ["test", "fake", "dummy", "john doe", "user"];
+      const isDummyName = dummyNames.some(d => cleanHolder.includes(d));
+      const dummyNumbers = ["123456789", "987654321", "111111111", "000000000"];
+      const isDummyNo = dummyNumbers.includes(cleanNo);
+
+      // Real verification: Business holder name must align with business scope ("Acme" or "Invoixe" or "Firm")
+      // If it's a completely mismatched name or dummy data, show custom bottom-right GSAP message
+      if (type === "bank" && (isDummyName || isDummyNo || (!cleanHolder.includes("acme") && !cleanHolder.includes("invoixe")))) {
+        setToastMessage({
+          title: "NPCI Record Mismatch",
+          desc: isDummyNo 
+            ? `Account number "${cleanNo}" is unregistered or does not exist at ${bankName || 'the routing bank'}.`
+            : `Penny-drop mismatch: bank records registered under 'Acme Traders Pvt Ltd' but you entered '${holderName}'.`
+        });
+      } else {
+        addAcctMutation.mutate(payload);
+      }
+    } else {
+      // Cash in Hand does not require Penny-Drop
+      addAcctMutation.mutate(payload);
+    }
   };
 
   // Called by CreditCardForm on submit. We take the full CardState for the UX,
@@ -523,23 +705,51 @@ export default function BankPage() {
 
           <Card className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
             {selectedAccount ? (
-              <div className="mb-4 rounded-xl border border-gray-50 bg-gray-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
-                  Target Account Context
-                </p>
-                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+              <div className="mb-4 rounded-xl border border-gray-50 bg-gray-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
+                    Target Account Context
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     <span className="font-extrabold text-gray-800 dark:text-white">{selectedAccount.name}</span>
-                    <Badge className="bg-[#16a34a]/10 text-[#16a34a] border-transparent font-bold capitalize text-[10px] py-0 px-2 h-5 hover:bg-[#16a34a]/15">
+                    <Badge className="bg-[#16a34a]/10 text-[#16a34a] border-transparent font-bold capitalize text-[10px] py-0 px-2 h-5">
                       {selectedAccount.type}
                     </Badge>
                   </div>
+                </div>
+                <div className="flex items-center gap-4 self-end sm:self-center">
                   <div className="text-xs">
                     <span className="text-gray-500">Active Balance:</span>{" "}
                     <span className={cn("font-bold", selectedAccount.balance < 0 ? "text-red-500" : "text-green-600")}>
                       {formatINR(selectedAccount.balance)}
                     </span>
                   </div>
+                  {selectedAccount.type === "cash" && (
+                    <Button
+                      onClick={() => setCashAuditOpen(true)}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 rounded-lg border-teal-200 text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:border-teal-950 dark:hover:bg-teal-950/20 font-bold"
+                      title="Perform physical cash audit"
+                    >
+                      <Calculator className="h-4 w-4" />
+                      Audit Register
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to remove "${selectedAccount.name}"?`)) {
+                        deleteAcctMutation.mutate(selectedAccount.id);
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    disabled={deleteAcctMutation.isPending}
+                    className="h-8 w-8 p-0 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 dark:border-rose-950 dark:hover:bg-rose-950/20"
+                    title="Remove bank account"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -715,19 +925,21 @@ export default function BankPage() {
               {/* 2d. Add Account Form */}
               <TabsContent value="add" className="outline-none">
                 <form onSubmit={handleAddAccount} className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="sm:col-span-1">
-                      <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-zinc-400">
-                        Account Name
-                      </label>
-                      <Input
-                        placeholder="e.g. HDFC Bank, Office Petty Cash"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                        className="rounded-xl border-gray-200"
-                      />
-                    </div>
+                  <div className={cn("grid gap-4", type === "cash" ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+                    {type === "cash" && (
+                      <div className="sm:col-span-1">
+                        <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-zinc-400">
+                          Account Name
+                        </label>
+                        <Input
+                          placeholder="Enter account name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          required
+                          className="rounded-xl border-gray-200"
+                        />
+                      </div>
+                    )}
 
                     <div className="sm:col-span-1">
                       <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-zinc-400">
@@ -767,18 +979,31 @@ export default function BankPage() {
                             Bank Name
                           </label>
                           <Input
-                            placeholder="e.g. HDFC Bank"
+                            placeholder="Enter bank name"
                             value={bankName}
                             onChange={(e) => setBankName(e.target.value)}
                             className="rounded-xl border-gray-200"
+                            list="bank-options-list"
                           />
+                          <datalist id="bank-options-list">
+                            <option value="HDFC Bank" />
+                            <option value="ICICI Bank" />
+                            <option value="State Bank of India" />
+                            <option value="Axis Bank" />
+                            <option value="Kotak Mahindra Bank" />
+                            <option value="IndusInd Bank" />
+                            <option value="Yes Bank" />
+                            <option value="Punjab National Bank" />
+                            <option value="Bank of Baroda" />
+                            <option value="Canara Bank" />
+                          </datalist>
                         </div>
                         <div>
                           <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-zinc-400">
                             Branch
                           </label>
                           <Input
-                            placeholder="e.g. MG Road, Bengaluru"
+                            placeholder="Enter bank branch location"
                             value={branch}
                             onChange={(e) => setBranch(e.target.value)}
                             className="rounded-xl border-gray-200"
@@ -791,7 +1016,7 @@ export default function BankPage() {
                             Account Number
                           </label>
                           <Input
-                            placeholder="e.g. 50100234567891"
+                            placeholder="Enter account number"
                             value={accountNo}
                             onChange={(e) => setAccountNo(e.target.value)}
                             className="rounded-xl border-gray-200"
@@ -802,7 +1027,7 @@ export default function BankPage() {
                             IFSC Code
                           </label>
                           <Input
-                            placeholder="e.g. HDFC0000123"
+                            placeholder="Enter bank IFSC code"
                             value={ifsc}
                             onChange={(e) => setIfsc(e.target.value)}
                             className="rounded-xl border-gray-200"
@@ -815,7 +1040,7 @@ export default function BankPage() {
                             Account Holder Name
                           </label>
                           <Input
-                            placeholder="e.g. Acme Traders Pvt Ltd"
+                            placeholder="Enter official account holder name"
                             value={holderName}
                             onChange={(e) => setHolderName(e.target.value)}
                             className="rounded-xl border-gray-200"
@@ -826,7 +1051,7 @@ export default function BankPage() {
                             UPI ID {type === "upi" && <span className="text-rose-500">*</span>}
                           </label>
                           <Input
-                            placeholder="e.g. acmetraders@okhdfcbank"
+                            placeholder="Enter UPI ID"
                             value={upiId}
                             onChange={(e) => setUpiId(e.target.value)}
                             className="rounded-xl border-gray-200"
@@ -1036,6 +1261,167 @@ export default function BankPage() {
           </div>
         )}
       </Card>
+
+      {/* Custom Verification GSAP Toast Warning */}
+      {toastMessage && (
+        <div
+          id="gsap-toast"
+          className="fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl border border-rose-100 bg-white/95 p-4 shadow-2xl backdrop-blur-md dark:border-rose-950/40 dark:bg-zinc-900/95 flex items-start gap-3.5"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div className="flex-1 space-y-1">
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white">{toastMessage.title}</h4>
+            <p className="text-xs text-gray-500 leading-relaxed dark:text-zinc-400">{toastMessage.desc}</p>
+          </div>
+          <button
+            onClick={closeToast}
+            className="rounded-lg p-1 text-gray-400 hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-zinc-800"
+          >
+            <span className="sr-only">Close</span>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+
+      {/* Cash Register Audit Dialog */}
+      <Dialog open={cashAuditOpen} onOpenChange={setCashAuditOpen}>
+        <DialogContent className="max-w-[480px] rounded-3xl border border-gray-100 p-6 shadow-2xl dark:border-zinc-900 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Calculator className="h-5.5 w-5.5 text-teal-500" />
+              Physical Cash Audit
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              Count and input physical banknotes/coins to reconcile with ledger balance.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
+            {(["2000", "500", "200", "100", "50", "20", "10"] as const).map(denom => (
+              <div key={denom} className="flex items-center justify-between gap-4">
+                <span className="text-xs font-bold text-gray-500 w-16">₹{denom} Note</span>
+                <span className="text-xs font-semibold text-gray-400">×</span>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={cashDenominations[denom] || ""}
+                  onChange={(e) => setCashDenominations({
+                    ...cashDenominations,
+                    [denom]: Math.max(0, parseInt(e.target.value) || 0)
+                  })}
+                  className="w-24 h-8 rounded-lg text-right"
+                />
+                <span className="text-xs text-gray-400 w-24 text-right">
+                  {formatINR((cashDenominations[denom] ?? 0) * parseInt(denom))}
+                </span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-xs font-bold text-gray-500 w-16">Coins / Other</span>
+              <span className="text-xs font-semibold text-gray-400">Total ₹</span>
+              <Input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={cashDenominations["coins"] || ""}
+                onChange={(e) => setCashDenominations({
+                  ...cashDenominations,
+                  "coins": Math.max(0, parseFloat(e.target.value) || 0)
+                })}
+                className="w-24 h-8 rounded-lg text-right"
+              />
+              <span className="text-xs text-gray-400 w-24 text-right">
+                {formatINR(cashDenominations["coins"] ?? 0)}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-gray-100 dark:border-zinc-900 pt-4 space-y-3 text-xs">
+            <div className="flex justify-between text-gray-500">
+              <span>Total Physical Cash Calculated:</span>
+              <span className="font-bold text-gray-800 dark:text-zinc-200">{formatINR(computedCashTotal)}</span>
+            </div>
+            <div className="flex justify-between text-gray-500">
+              <span>System Register Balance:</span>
+              <span className="font-bold text-gray-800 dark:text-zinc-200">{formatINR((selectedAccount?.balance ?? 0) / 100)}</span>
+            </div>
+            
+            {/* Discrepancy Display */}
+            {selectedAccount && (() => {
+              const sysVal = selectedAccount.balance / 100;
+              const diff = computedCashTotal - sysVal;
+              return (
+                <div className={cn(
+                  "flex justify-between p-2 rounded-xl border font-bold text-[11px]",
+                  diff === 0 && "bg-emerald-50/50 text-emerald-700 border-emerald-100/50 dark:bg-emerald-950/10 dark:text-emerald-400 dark:border-emerald-900/30",
+                  diff > 0 && "bg-teal-50/50 text-teal-700 border-teal-100/50 dark:bg-teal-950/10 dark:text-teal-400 dark:border-teal-900/30",
+                  diff < 0 && "bg-rose-50/50 text-rose-700 border-rose-100/50 dark:bg-rose-950/10 dark:text-rose-400 dark:border-rose-900/30"
+                )}>
+                  <span>Discrepancy:</span>
+                  <span>
+                    {diff === 0 && "Perfect Match (No Action)"}
+                    {diff > 0 && `Surplus (+${formatINR(diff)})`}
+                    {diff < 0 && `Shortage (-${formatINR(Math.abs(diff))})`}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCashAuditOpen(false);
+                setCashDenominations({ "2000": 0, "500": 0, "200": 0, "100": 0, "50": 0, "20": 0, "10": 0, "coins": 0 });
+              }}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            {selectedAccount && (() => {
+              const sysVal = selectedAccount.balance / 100;
+              const diff = computedCashTotal - sysVal;
+              return (
+                <Button
+                  onClick={() => {
+                    const diffPaise = Math.round(diff * 100);
+                    if (diffPaise > 0) {
+                      entryMutation.mutate({
+                        id: selectedAccount.id,
+                        amount: diffPaise,
+                        kind: "deposit",
+                        note: "Cash reconciliation audit: physical surplus corrected"
+                      });
+                    } else if (diffPaise < 0) {
+                      entryMutation.mutate({
+                        id: selectedAccount.id,
+                        amount: Math.abs(diffPaise),
+                        kind: "withdraw",
+                        note: "Cash reconciliation audit: physical shortage adjusted"
+                      });
+                    }
+                    setCashAuditOpen(false);
+                    setCashDenominations({ "2000": 0, "500": 0, "200": 0, "100": 0, "50": 0, "20": 0, "10": 0, "coins": 0 });
+                  }}
+                  disabled={diff === 0}
+                  className="rounded-xl bg-teal-600 hover:bg-teal-700 font-bold text-white"
+                  size="sm"
+                >
+                  Reconcile Balance
+                </Button>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

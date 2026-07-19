@@ -1,4 +1,4 @@
-import { Controller, Get, Injectable, Module, UseGuards } from "@nestjs/common";
+import { Controller, Get, Injectable, Module, Query, UseGuards } from "@nestjs/common";
 import { PrismaClient } from "@invoixe/db";
 import type { AuthUser } from "../lib/auth";
 import { getUserBusinessId } from "../lib/business";
@@ -80,11 +80,20 @@ export class ReportsService {
   }
 
   /** Headline P&L + receivable/payable numbers. */
-  async summary(user: AuthUser) {
+  async summary(user: AuthUser, monthOnly = false) {
     const businessId = await getUserBusinessId(user);
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
     const agg = await this.prisma.transaction.groupBy({
       by: ["type"],
-      where: { businessId, deletedAt: null },
+      where: {
+        businessId,
+        deletedAt: null,
+        ...(monthOnly ? { date: { gte: startOfMonth } } : {}),
+      },
       _sum: { grandTotal: true, subTotal: true, totalTax: true },
     });
     type Sums = { grandTotal: number | null; subTotal: number | null; totalTax: number | null };
@@ -188,8 +197,8 @@ export class ReportsController {
   }
 
   @Get("summary")
-  summary(@CurrentUser() user: AuthUser) {
-    return this.reports.summary(user);
+  summary(@CurrentUser() user: AuthUser, @Query("monthOnly") monthOnly?: string) {
+    return this.reports.summary(user, monthOnly === "true");
   }
 
   @Get("outstanding")

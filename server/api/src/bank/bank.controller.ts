@@ -1,5 +1,5 @@
 import {
-  BadRequestException, Body, Controller, Get, HttpCode, Injectable, Module, NotFoundException, Param, Post, UseGuards,
+  BadRequestException, Body, Controller, Delete, Get, HttpCode, Injectable, Module, NotFoundException, Param, Post, UseGuards,
 } from "@nestjs/common";
 import { PrismaClient } from "@invoixe/db";
 import type { AuthUser } from "../lib/auth";
@@ -128,6 +128,18 @@ export class BankService {
     });
     return { ok: true };
   }
+
+  async deleteAccount(user: AuthUser, id: string) {
+    const businessId = await getUserBusinessId(user);
+    const account = await this.prisma.bankAccount.findFirst({ where: { id, businessId, deletedAt: null } });
+    if (!account) throw new NotFoundException({ error: "not_found" });
+
+    await this.prisma.bankAccount.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    return { ok: true };
+  }
 }
 
 @Controller("bank")
@@ -162,6 +174,11 @@ export class BankController {
   @HttpCode(201)
   addEntry(@CurrentUser() user: AuthUser, @Param("id") id: string, @Body() body: EntryBody) {
     return this.bank.addEntry(user, id, body);
+  }
+
+  @Delete(":id")
+  deleteAccount(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.bank.deleteAccount(user, id);
   }
 }
 

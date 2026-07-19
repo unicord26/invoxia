@@ -12,13 +12,13 @@ import {
   TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowRight,
   Search,
   Percent,
   Activity,
   FileText,
   ShoppingCart,
   Zap,
-  Info,
   ExternalLink,
   type LucideIcon
 } from "lucide-react";
@@ -83,11 +83,7 @@ type StockResponse = {
   totalValue: number;
 };
 
-type GstResponse = {
-  output: { taxable: number; cgst: number; sgst: number; igst: number; total: number };
-  input: { cgst: number; sgst: number; igst: number; total: number };
-  netPayable: number;
-};
+
 
 // --- KPI Card Sub-component ---
 function KPICard({
@@ -155,8 +151,8 @@ export function DashboardKPIs() {
   });
 
   const { data: s, isLoading: sLoading } = useQuery<SummaryData>({
-    queryKey: ["summary"],
-    queryFn: () => api.get<SummaryData>("/api/reports/summary"),
+    queryKey: ["summary", { monthOnly: true }],
+    queryFn: () => api.get<SummaryData>("/api/reports/summary?monthOnly=true"),
   });
 
   const isLoading = dLoading || sLoading;
@@ -172,13 +168,13 @@ export function DashboardKPIs() {
         loading={isLoading}
       />
       <KPICard
-        label="Active Accounts"
-        icon={Users}
-        value={`${d?.partiesCount ?? 0}`}
+        label="Current Balance"
+        icon={Wallet}
+        value={formatINR(d?.cashBank ?? 0)}
         trend={
-          (d?.newPartiesThisWeek ?? 0) > 0
-            ? { text: `${d?.newPartiesThisWeek} added this week`, up: true }
-            : { text: "No new signups", up: false }
+          (d?.cashBank ?? 0) >= 0
+            ? { text: "Capital healthy", up: true }
+            : { text: "Account overdraft", up: false }
         }
         colorClass="bg-gradient-to-r from-blue-500 to-indigo-600"
         loading={isLoading}
@@ -213,19 +209,21 @@ export function DashboardKPIs() {
 
 // === 2. Sales vs Expenses SVG Chart ===
 export function DashboardCharts() {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   const { data: daybook, isLoading } = useQuery<DaybookEntry[]>({
     queryKey: ["daybook"],
     queryFn: () => api.get<DaybookEntry[]>("/api/reports/daybook"),
   });
 
   const { data: s } = useQuery<SummaryData>({
-    queryKey: ["summary"],
-    queryFn: () => api.get<SummaryData>("/api/reports/summary"),
+    queryKey: ["summary", { monthOnly: true }],
+    queryFn: () => api.get<SummaryData>("/api/reports/summary?monthOnly=true"),
   });
 
   if (isLoading) {
     return (
-      <Card className="lg:col-span-2 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <Card className="lg:col-span-2 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <Skeleton className="h-8 w-48 mb-4" />
         <Skeleton className="h-[200px] w-full" />
       </Card>
@@ -269,129 +267,136 @@ export function DashboardCharts() {
   const displaySales = hasRealData ? salesValues : [40000, 120000, 85000, 210000, 160000, 240000, 190000];
   const displayExpenses = hasRealData ? expensesValues : [30000, 70000, 60000, 130000, 95000, 150000, 120000];
 
+  const totalSales = displaySales.reduce((a, b) => a + b, 0);
+  const totalExpenses = displayExpenses.reduce((a, b) => a + b, 0);
+
   const maxVal = Math.max(...displaySales, ...displayExpenses, 10000);
-  const chartHeight = 150;
-  const scaleY = (v: number) => 170 - (v / maxVal) * chartHeight;
-  const scaleX = (idx: number) => 50 + idx * 70;
-
-  const salesPoints = displaySales.map((v, i) => ({ x: scaleX(i), y: scaleY(v) }));
-  const expensePoints = displayExpenses.map((v, i) => ({ x: scaleX(i), y: scaleY(v) }));
-
-  // Dynamic SVG Area path generators
-  const getAreaD = (pts: { x: number; y: number }[]) => {
-    if (pts.length === 0) return "";
-    let d = `M ${pts[0]!.x} ${pts[0]!.y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1]!;
-      const curr = pts[i]!;
-      const cpX1 = prev.x + 35;
-      const cpY1 = prev.y;
-      const cpX2 = curr.x - 35;
-      const cpY2 = curr.y;
-      d += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${curr.x} ${curr.y}`;
-    }
-    const lastX = pts[pts.length - 1]!.x;
-    d += ` L ${lastX} 170 L ${pts[0]!.x} 170 Z`;
-    return d;
-  };
-
-  const getLineD = (pts: { x: number; y: number }[]) => {
-    if (pts.length === 0) return "";
-    let d = `M ${pts[0]!.x} ${pts[0]!.y}`;
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1]!;
-      const curr = pts[i]!;
-      const cpX1 = prev.x + 35;
-      const cpY1 = prev.y;
-      const cpX2 = curr.x - 35;
-      const cpY2 = curr.y;
-      d += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${curr.x} ${curr.y}`;
-    }
-    return d;
-  };
-
-  const salesAreaD = getAreaD(salesPoints);
-  const salesLineD = getLineD(salesPoints);
-  const expenseAreaD = getAreaD(expensePoints);
-  const expenseLineD = getLineD(expensePoints);
+  
+  // Grid X positioning helper
+  const scaleX = (idx: number) => 55 + idx * 64;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Dynamic Graph */}
-      <Card className="lg:col-span-2 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+      <Card className="lg:col-span-2 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Sales & Expense Trend</h3>
-            <p className="text-xs text-gray-500">7-day continuous business flow</p>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              Sales & Expense Trend
+              {!hasRealData && (
+                <Badge variant="secondary" className="bg-amber-50 text-amber-600 border-amber-200/50 hover:bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30 font-semibold text-[9px] py-0 px-1.5 h-4.5">
+                  Demo
+                </Badge>
+              )}
+            </h3>
+            <p className="text-xs text-gray-500">Comparing daily revenue against business outflows</p>
           </div>
-          {!hasRealData && (
-            <Badge variant="secondary" className="bg-amber-50 text-amber-600 hover:bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400">
-              Demo Data View
-            </Badge>
-          )}
-          <div className="flex gap-4 text-xs font-semibold">
-            <span className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-              <span className="h-3 w-3 rounded-full bg-emerald-500" />
-              Sales (Income)
-            </span>
-            <span className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-              <span className="h-3 w-3 rounded-full bg-rose-500" />
-              Outflow (Purchases + Expense)
-            </span>
+
+          {/* Hover Status / Totals Display panel */}
+          <div className="text-xs font-semibold self-start sm:self-center">
+            {hoveredIdx !== null ? (
+              <div className="bg-teal-50/50 dark:bg-teal-950/10 border border-teal-100/50 dark:border-teal-900/30 rounded-xl px-3 py-1.5 flex items-center gap-3">
+                <span className="text-teal-700 dark:text-teal-400 font-extrabold">{labels[hoveredIdx]}</span>
+                <span className="h-3 w-px bg-teal-200 dark:bg-teal-900" />
+                <span className="text-gray-600 dark:text-gray-300">Sales: <strong className="text-emerald-600 dark:text-emerald-400">{formatINR(displaySales[hoveredIdx] ?? 0)}</strong></span>
+                <span className="text-gray-600 dark:text-gray-300">Outflow: <strong className="text-rose-600 dark:text-rose-400">{formatINR(displayExpenses[hoveredIdx] ?? 0)}</strong></span>
+              </div>
+            ) : (
+              <div className="bg-gray-50/80 dark:bg-zinc-900/80 border border-gray-100 dark:border-zinc-800 px-3 py-1.5 rounded-xl flex items-center gap-3">
+                <span className="text-gray-400 dark:text-zinc-500 font-bold">7-Day Summary</span>
+                <span className="h-3 w-px bg-gray-200 dark:bg-zinc-800" />
+                <span className="text-gray-600 dark:text-gray-300">Sales: <strong className="text-emerald-600 dark:text-emerald-400">{formatINR(totalSales)}</strong></span>
+                <span className="text-gray-600 dark:text-gray-300">Outflow: <strong className="text-rose-600 dark:text-rose-400">{formatINR(totalExpenses)}</strong></span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* SVG Graph View */}
-        <div className="relative h-[220px] w-full">
-          <svg className="h-full w-full" viewBox="0 0 500 200" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#10b981" stopOpacity="0.00" />
-              </linearGradient>
-              <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.00" />
-              </linearGradient>
-            </defs>
-
+        <div className="relative h-[200px] w-full">
+          <svg className="h-full w-full overflow-visible" viewBox="0 0 500 180" preserveAspectRatio="none">
             {/* Dotted Grid lines */}
-            <line x1="40" y1="170" x2="480" y2="170" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-800" />
-            <line x1="40" y1="120" x2="480" y2="120" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-800" />
-            <line x1="40" y1="70" x2="480" y2="70" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-800" />
-            <line x1="40" y1="20" x2="480" y2="20" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-800" />
+            <line x1="40" y1="140" x2="470" y2="140" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-900" />
+            <line x1="40" y1="100" x2="470" y2="100" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-900" />
+            <line x1="40" y1="60" x2="470" y2="60" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-900" />
+            <line x1="40" y1="20" x2="470" y2="20" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="3" className="dark:stroke-zinc-900" />
 
-            {/* Filled Areas */}
-            <path d={salesAreaD} fill="url(#salesGrad)" />
-            <path d={expenseAreaD} fill="url(#expenseGrad)" />
+            {/* Render Bars */}
+            {displaySales.map((salesVal, idx) => {
+              const x = scaleX(idx);
+              const expenseVal = displayExpenses[idx] ?? 0;
+              
+              // Heights based on maximum val
+              const sHeight = (salesVal / maxVal) * 115;
+              const eHeight = (expenseVal / maxVal) * 115;
+              
+              const isHovered = hoveredIdx === idx;
+              const hasHover = hoveredIdx !== null;
+              
+              return (
+                <g key={`bar-group-${idx}`} className="transition-opacity duration-200">
+                  {/* Sales Bar (Emerald) */}
+                  <rect
+                    x={x - 9}
+                    y={140 - sHeight}
+                    width="8"
+                    height={Math.max(sHeight, 2)}
+                    rx="2.5"
+                    fill="#10b981"
+                    className="transition-all duration-300"
+                    opacity={hasHover ? (isHovered ? 1.0 : 0.4) : 0.85}
+                  />
+                  {/* Outflow Bar (Rose) */}
+                  <rect
+                    x={x + 1}
+                    y={140 - eHeight}
+                    width="8"
+                    height={Math.max(eHeight, 2)}
+                    rx="2.5"
+                    fill="#f43f5e"
+                    className="transition-all duration-300"
+                    opacity={hasHover ? (isHovered ? 1.0 : 0.4) : 0.85}
+                  />
 
-            {/* Lines */}
-            <path d={salesLineD} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d={expenseLineD} fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-            {/* Glowing vertices */}
-            {salesPoints.map((p, idx) => (
-              <circle key={`s-dot-${idx}`} cx={p.x} cy={p.y} r="4.5" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" className="shadow-lg" />
-            ))}
-            {expensePoints.map((p, idx) => (
-              <circle key={`e-dot-${idx}`} cx={p.x} cy={p.y} r="4.5" fill="#f43f5e" stroke="#ffffff" strokeWidth="1.5" className="shadow-lg" />
-            ))}
+                  {/* Invisible Hover Area Trigger */}
+                  <rect
+                    x={x - 25}
+                    y={10}
+                    width="50"
+                    height="145"
+                    fill="transparent"
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredIdx(idx)}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                  />
+                </g>
+              );
+            })}
 
             {/* X Labels */}
             {labels.map((lbl, idx) => (
-              <text key={`lbl-${idx}`} x={scaleX(idx)} y="192" textAnchor="middle" className="fill-gray-400 text-[10px] font-semibold dark:fill-zinc-500">
+              <text 
+                key={`lbl-${idx}`} 
+                x={scaleX(idx)} 
+                y="162" 
+                textAnchor="middle" 
+                className={cn(
+                  "text-[10px] font-bold transition-all duration-200",
+                  hoveredIdx === idx ? "fill-teal-600 dark:fill-teal-400 font-extrabold" : "fill-gray-400 dark:fill-zinc-500"
+                )}
+              >
                 {lbl}
               </text>
             ))}
 
             {/* Y axis indicators */}
-            <text x="35" y="24" textAnchor="end" className="fill-gray-400 text-[9px] font-bold dark:fill-zinc-500">
+            <text x="32" y="24" textAnchor="end" className="fill-gray-400 text-[9px] font-bold dark:fill-zinc-500">
               {formatINR(maxVal, false).split(".")[0]}
             </text>
-            <text x="35" y="98" textAnchor="end" className="fill-gray-400 text-[9px] font-bold dark:fill-zinc-500">
+            <text x="32" y="84" textAnchor="end" className="fill-gray-400 text-[9px] font-bold dark:fill-zinc-500">
               {formatINR(maxVal / 2, false).split(".")[0]}
             </text>
-            <text x="35" y="174" textAnchor="end" className="fill-gray-400 text-[9px] font-bold dark:fill-zinc-500">
+            <text x="32" y="144" textAnchor="end" className="fill-gray-400 text-[9px] font-bold dark:fill-zinc-500">
               0
             </text>
           </svg>
@@ -399,43 +404,53 @@ export function DashboardCharts() {
       </Card>
 
       {/* Quick P&L Breakdown Panel */}
-      <Card className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <Card className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-[0_12px_30px_rgba(20,184,166,0.05)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:shadow-[0_12px_30px_rgba(20,184,166,0.03)]">
         <h3 className="text-base font-bold text-gray-900 dark:text-white">Operating Balance</h3>
         <p className="text-xs text-gray-500 mb-6">Net financial breakdown</p>
 
-        <div className="space-y-5">
-          <div className="flex items-center justify-between border-b border-gray-50 pb-3 dark:border-zinc-900">
+        <div className="space-y-4">
+          <div className="group/item flex items-center justify-between rounded-2xl bg-emerald-50/40 p-4 transition-all duration-300 hover:bg-emerald-50 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20">
             <div>
-              <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Total Sales</p>
-              <h4 className="text-lg font-bold text-emerald-600">{formatINR(s?.sales ?? 0)}</h4>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">Total Sales</p>
+              <h4 className="text-xl font-extrabold text-emerald-600 mt-1 dark:text-emerald-400">{formatINR(s?.sales ?? 0)}</h4>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400">
-              <ArrowUpRight className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 transition-transform group-hover/item:scale-110 dark:bg-emerald-950/40 dark:text-emerald-400 shadow-sm">
+              <ArrowUpRight className="h-5.5 w-5.5" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-b border-gray-50 pb-3 dark:border-zinc-900">
+          <div className="group/item flex items-center justify-between rounded-2xl bg-rose-50/40 p-4 transition-all duration-300 hover:bg-rose-50 dark:bg-rose-950/10 dark:hover:bg-rose-950/20">
             <div>
-              <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Purchases & Expenses</p>
-              <h4 className="text-lg font-bold text-rose-600">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">Purchases & Expenses</p>
+              <h4 className="text-xl font-extrabold text-rose-600 mt-1 dark:text-rose-400">
                 {formatINR((s?.purchases ?? 0) + (s?.expenses ?? 0))}
               </h4>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400">
-              <ArrowDownRight className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 transition-transform group-hover/item:scale-110 dark:bg-rose-950/40 dark:text-rose-400 shadow-sm">
+              <ArrowDownRight className="h-5.5 w-5.5" />
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl bg-gray-50 p-4 dark:bg-zinc-900">
+          <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/30">
             <div className="mb-2 flex items-center justify-between text-xs font-bold text-gray-700 dark:text-gray-300">
               <span>Gross Profit Margin</span>
-              <span className="text-purple-600">
+              <span className={cn(
+                "font-extrabold px-2 py-0.5 rounded-lg text-[11px] shadow-sm",
+                (s?.sales && s.sales > 0 && s.grossProfit >= 0) 
+                  ? "bg-emerald-500 text-white" 
+                  : "bg-rose-500 text-white"
+              )}>
                 {s?.sales && s.sales > 0 ? `${Math.round((s.grossProfit / s.sales) * 100)}%` : "0%"}
               </span>
             </div>
-            <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-zinc-800">
+            <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-zinc-800 overflow-hidden shadow-inner">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-600"
+                className={cn(
+                  "h-full rounded-full transition-all duration-500",
+                  (s?.sales && s.sales > 0 && s.grossProfit >= 0) 
+                    ? "bg-gradient-to-r from-emerald-400 to-teal-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" 
+                    : "bg-gradient-to-r from-rose-400 to-red-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+                )}
                 style={{
                   width: `${Math.min(
                     Math.max(s?.sales && s.sales > 0 ? (s.grossProfit / s.sales) * 100 : 0, 0),
@@ -444,7 +459,7 @@ export function DashboardCharts() {
                 }}
               />
             </div>
-            <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+            <p className="mt-3 text-[10px] leading-relaxed text-gray-400 dark:text-zinc-500 font-medium">
               GPM shows standard markup profitability across inventory trades and service billings.
             </p>
           </div>
@@ -475,26 +490,60 @@ export function DashboardActivity() {
     });
   };
 
-  const list = getFiltered().slice(0, 5); // Show top 5 matches
+  const list = getFiltered().slice(0, 50); // Show up to 50 matches
+
+  const getTypeStyle = (type: string) => {
+    switch (type) {
+      case "sale":
+        return "bg-emerald-500/10 text-emerald-600 border-emerald-200/50 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/30";
+      case "purchase":
+        return "bg-amber-500/10 text-amber-600 border-amber-200/50 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/30";
+      case "expense":
+        return "bg-rose-500/10 text-rose-600 border-rose-200/50 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/30";
+      case "payment_in":
+      case "payment_out":
+        return "bg-blue-500/10 text-blue-600 border-blue-200/50 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/30";
+      default:
+        return "bg-gray-500/10 text-gray-600 border-gray-200/50 dark:bg-zinc-800/30 dark:text-zinc-400 dark:border-zinc-700/30";
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "sale":
+        return "Sale";
+      case "purchase":
+        return "Purchase";
+      case "expense":
+        return "Expense";
+      case "payment_in":
+        return "Payment In";
+      case "payment_out":
+        return "Payment Out";
+      default:
+        return type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ");
+    }
+  };
 
   return (
-    <Card className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+    <Card className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-[0_12px_30px_rgba(20,184,166,0.05)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:shadow-[0_12px_30px_rgba(20,184,166,0.03)]">
+      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h3 className="text-base font-bold text-gray-900 dark:text-white">Recent Transactions</h3>
           <p className="text-xs text-gray-500">Latest invoices and operational bills logged</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Filter Pills */}
+        
+        {/* Segmented Filter Pills */}
+        <div className="inline-flex rounded-xl bg-gray-100/80 p-1 dark:bg-zinc-900/60 border border-gray-200/20 dark:border-zinc-800/40 shadow-inner">
           {(["all", "sale", "purchase", "expense"] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-semibold capitalize transition",
+                "rounded-lg px-3 py-1.5 text-xs font-bold transition-all duration-200 capitalize",
                 filter === f
-                  ? "bg-[#15311f] text-white"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  ? "bg-white text-gray-900 shadow-sm dark:bg-zinc-800 dark:text-white"
+                  : "text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200"
               )}
             >
               {f === "all" ? "Show All" : f + "s"}
@@ -503,80 +552,141 @@ export function DashboardActivity() {
         </div>
       </div>
 
-      <div className="mb-4 relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+      <div className="mb-4 relative group">
+        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-teal-500" />
         <Input
           placeholder="Search by invoice number or party name..."
           value={q}
           onChange={e => setQ(e.target.value)}
-          className="pl-9 rounded-xl border-gray-200 dark:border-zinc-800 focus-visible:ring-1"
+          className="pl-10 pr-4 h-10 rounded-xl border-gray-200 bg-gray-50/30 dark:border-zinc-800 dark:bg-zinc-900/20 focus-visible:ring-1 focus-visible:ring-teal-500 text-xs"
         />
       </div>
 
       {isLoading ? (
         <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-2xl" />
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="py-8 text-center">
-          <Activity className="mx-auto h-8 w-8 text-gray-300 dark:text-zinc-700" />
+        <div className="py-10 text-center">
+          <Activity className="mx-auto h-8 w-8 text-gray-300 dark:text-zinc-700 animate-pulse" />
           <h4 className="mt-2 text-sm font-bold text-gray-800 dark:text-gray-300">No matching activities</h4>
           <p className="text-xs text-gray-400 mt-1">Try tweaking filters or adding new transactions.</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-50 dark:divide-zinc-900">
-          {list.map(entry => (
-            <div key={entry.id} className="flex items-center justify-between py-3.5 transition hover:bg-gray-50/50 dark:hover:bg-zinc-900/30">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs uppercase",
-                    entry.type === "sale" && "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400",
-                    entry.type === "purchase" && "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400",
-                    entry.type === "expense" && "bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400",
-                    entry.type !== "sale" && entry.type !== "purchase" && entry.type !== "expense" && "bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400"
-                  )}
-                >
-                  {entry.type === "sale" && <FileText className="h-4.5 w-4.5" />}
-                  {entry.type === "purchase" && <ShoppingCart className="h-4.5 w-4.5" />}
-                  {entry.type === "expense" && <Zap className="h-4.5 w-4.5" />}
-                  {entry.type !== "sale" && entry.type !== "purchase" && entry.type !== "expense" && <Activity className="h-4.5 w-4.5" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
-                      {entry.partyName || "Cash Counter Sales"}
-                    </span>
-                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4.5 uppercase border-gray-200 text-gray-500 dark:border-zinc-800">
-                      {entry.number}
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    {new Date(entry.date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit"
-                    })}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span
-                  className={cn(
-                    "text-sm font-bold",
-                    entry.type === "sale" ? "text-emerald-600" : "text-gray-900 dark:text-white"
-                  )}
-                >
-                  {entry.type === "sale" ? "+" : "-"} {formatINR(entry.grandTotal)}
-                </span>
-                <p className="text-[10px] text-gray-400 capitalize mt-0.5">{entry.type} billing</p>
-              </div>
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <div className="grid grid-cols-6 gap-4 px-6 py-3.5 bg-gray-50/50 dark:bg-zinc-900/30 rounded-xl text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 mb-2 border border-gray-100 dark:border-zinc-900">
+              <div className="col-span-1">Date & Time</div>
+              <div className="col-span-1">Reference</div>
+              <div className="col-span-2">Party Name</div>
+              <div className="col-span-1">Type</div>
+              <div className="col-span-1 text-right">Amount</div>
             </div>
-          ))}
-        </div>
+            <div className="space-y-1 max-h-[350px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-zinc-800">
+              {list.map(entry => {
+                const isSale = entry.type === "sale";
+                return (
+                  <div 
+                    key={entry.id} 
+                    className="grid grid-cols-6 gap-4 items-center px-6 py-3 rounded-xl border border-transparent hover:bg-gray-50/50 hover:border-gray-100 dark:hover:bg-zinc-900/30 dark:hover:border-zinc-800/40 transition-all duration-200 group/tx cursor-pointer"
+                  >
+                    <div className="col-span-1 text-xs text-gray-500 dark:text-zinc-400 font-medium">
+                      {new Date(entry.date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit"
+                      })}
+                    </div>
+                    <div className="col-span-1">
+                      <span className="font-mono text-[11px] font-medium text-gray-600 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-900/80 px-2 py-0.5 rounded border border-gray-200/50 dark:border-zinc-800/60">
+                        {entry.number}
+                      </span>
+                    </div>
+                    <div className="col-span-2 font-semibold text-[13px] text-gray-800 dark:text-gray-200 truncate">
+                      {entry.partyName || "Cash Counter Sales"}
+                    </div>
+                    <div className="col-span-1">
+                      <Badge className={cn("text-[9px] py-0 px-2 h-5 font-bold uppercase pointer-events-none rounded-md", getTypeStyle(entry.type))} variant="outline">
+                        {getTypeLabel(entry.type)}
+                      </Badge>
+                    </div>
+                    <div className={cn("col-span-1 text-right font-bold text-xs tracking-tight", isSale ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white")}>
+                      {isSale ? "+" : "-"} {formatINR(entry.grandTotal)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Mobile List View */}
+          <div className="md:hidden space-y-2 max-h-[350px] overflow-y-auto pr-1">
+            {list.map(entry => {
+              const isSale = entry.type === "sale";
+              return (
+                <div 
+                  key={entry.id} 
+                  className="group/tx flex items-center justify-between p-3 rounded-2xl border border-transparent transition-all duration-300 hover:bg-gray-50/60 hover:border-gray-100 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.02)] dark:hover:bg-zinc-900/40 dark:hover:border-zinc-800/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-xl font-bold text-xs uppercase transition-transform group-hover/tx:scale-105 shadow-sm",
+                        entry.type === "sale" && "bg-gradient-to-br from-emerald-400/10 to-teal-400/5 text-emerald-600 dark:from-emerald-500/20 dark:to-teal-500/5 dark:text-emerald-400",
+                        entry.type === "purchase" && "bg-gradient-to-br from-amber-400/10 to-orange-400/5 text-amber-600 dark:from-amber-500/20 dark:to-orange-500/5 dark:text-amber-400",
+                        entry.type === "expense" && "bg-gradient-to-br from-rose-400/10 to-red-400/5 text-rose-600 dark:from-rose-500/20 dark:to-red-500/5 dark:text-rose-400",
+                        entry.type !== "sale" && entry.type !== "purchase" && entry.type !== "expense" && "bg-gradient-to-br from-blue-400/10 to-indigo-400/5 text-blue-600 dark:from-blue-500/20 dark:to-indigo-500/5 dark:text-blue-400"
+                      )}
+                    >
+                      {entry.type === "sale" && <FileText className="h-4.5 w-4.5" />}
+                      {entry.type === "purchase" && <ShoppingCart className="h-4.5 w-4.5" />}
+                      {entry.type === "expense" && <Zap className="h-4.5 w-4.5" />}
+                      {entry.type !== "sale" && entry.type !== "purchase" && entry.type !== "expense" && <Activity className="h-4.5 w-4.5" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                          {entry.partyName || "Cash Counter Sales"}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] py-0 px-2 h-4.5 uppercase border-gray-200 bg-gray-50/50 text-gray-500 font-mono tracking-tight dark:border-zinc-800 dark:bg-zinc-950">
+                          {entry.number}
+                        </Badge>
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                        {new Date(entry.date).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit"
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <span
+                        className={cn(
+                          "text-sm font-bold tracking-tight",
+                          isSale ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"
+                        )}
+                      >
+                        {isSale ? "+" : "-"} {formatINR(entry.grandTotal)}
+                      </span>
+                      <p className="text-[9px] font-bold text-gray-400 capitalize mt-0.5">{entry.type} billing</p>
+                    </div>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-50 text-gray-400 opacity-0 transition-all duration-300 group-hover/tx:opacity-100 group-hover/tx:translate-x-0.5 dark:bg-zinc-900 dark:text-zinc-500">
+                      <ArrowRight className="h-3 w-3" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </Card>
   );
@@ -599,16 +709,11 @@ export function DashboardAlerts() {
     queryFn: () => api.get<StockResponse>("/api/reports/stock"),
   });
 
-  const { data: gst, isLoading: gLoading } = useQuery<GstResponse>({
-    queryKey: ["gst"],
-    queryFn: () => api.get<GstResponse>("/api/reports/gst"),
-  });
-
-  const isLoading = sLoading || oLoading || kLoading || gLoading;
+  const isLoading = sLoading || oLoading || kLoading;
 
   if (isLoading) {
     return (
-      <Card className="rounded-2xl border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <Card className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <Skeleton className="h-6 w-32 mb-4" />
         <Skeleton className="h-16 w-full mb-3" />
         <Skeleton className="h-24 w-full" />
@@ -632,7 +737,7 @@ export function DashboardAlerts() {
   return (
     <div className="space-y-6">
       {/* 4a. Accounts Receivable vs Payable Progress bar */}
-      <Card className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <Card className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-[0_12px_30px_rgba(20,184,166,0.05)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:shadow-[0_12px_30px_rgba(20,184,166,0.03)]">
         <h3 className="text-base font-bold text-gray-900 dark:text-white">Dues & Collections</h3>
         <p className="text-xs text-gray-500 mb-4">Outstanding balance ratio</p>
 
@@ -640,36 +745,41 @@ export function DashboardAlerts() {
           <div className="grid grid-cols-2 text-xs font-semibold">
             <div>
               <p className="text-gray-400 dark:text-zinc-500">Receivable</p>
-              <p className="text-sm font-bold text-emerald-600">{formatINR(totRec)}</p>
+              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatINR(totRec)}</p>
             </div>
             <div className="text-right">
               <p className="text-gray-400 dark:text-zinc-500">Payable</p>
-              <p className="text-sm font-bold text-rose-600">{formatINR(totPay)}</p>
+              <p className="text-sm font-bold text-rose-600 dark:text-rose-400">{formatINR(totPay)}</p>
             </div>
           </div>
 
-          <div className="h-3.5 w-full flex rounded-full overflow-hidden bg-gray-100 dark:bg-zinc-900">
+          <div className="h-4 w-full flex rounded-full overflow-hidden bg-gray-100 dark:bg-zinc-900 shadow-inner">
             {grandDues === 0 ? (
               <div className="h-full w-full bg-gray-200 dark:bg-zinc-800" />
             ) : (
               <>
-                <div className="h-full bg-emerald-500" style={{ width: `${recRatio}%` }} />
-                <div className="h-full bg-rose-500" style={{ width: `${100 - recRatio}%` }} />
+                <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 shadow-[0_0_8px_rgba(16,185,129,0.3)] transition-all duration-500" style={{ width: `${recRatio}%` }} />
+                <div className="h-full bg-gradient-to-r from-rose-400 to-red-500 shadow-[0_0_8px_rgba(244,63,94,0.3)] transition-all duration-500" style={{ width: `${100 - recRatio}%` }} />
               </>
             )}
           </div>
 
           {/* Collateral lists of top parties */}
           {receivablesList.length > 0 && (
-            <div className="pt-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">
+            <div className="pt-3 border-t border-gray-50 dark:border-zinc-900/60">
+              <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">
                 Top Collections
               </h4>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {receivablesList.map(p => (
-                  <div key={p.id} className="flex justify-between items-center text-xs">
-                    <span className="text-gray-700 dark:text-zinc-300 font-medium truncate max-w-[150px]">{p.name}</span>
-                    <span className="font-bold text-emerald-600">{formatINR(p.balance)}</span>
+                  <div key={p.id} className="flex justify-between items-center text-xs group/item p-1.5 rounded-xl transition hover:bg-emerald-50/20 dark:hover:bg-emerald-950/10">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[10px] font-extrabold text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-gray-700 dark:text-zinc-300 font-semibold truncate max-w-[150px]">{p.name}</span>
+                    </div>
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatINR(p.balance)}</span>
                   </div>
                 ))}
               </div>
@@ -677,15 +787,20 @@ export function DashboardAlerts() {
           )}
 
           {payablesList.length > 0 && (
-            <div className="pt-2 border-t border-gray-50 dark:border-zinc-900">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-2">
+            <div className="pt-3 border-t border-gray-50 dark:border-zinc-900/60">
+              <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-2">
                 Top Dues
               </h4>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {payablesList.map(p => (
-                  <div key={p.id} className="flex justify-between items-center text-xs">
-                    <span className="text-gray-700 dark:text-zinc-300 font-medium truncate max-w-[150px]">{p.name}</span>
-                    <span className="font-bold text-rose-600">{formatINR(Math.abs(p.balance))}</span>
+                  <div key={p.id} className="flex justify-between items-center text-xs group/item p-1.5 rounded-xl transition hover:bg-rose-50/20 dark:hover:bg-rose-950/10">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-50 text-[10px] font-extrabold text-rose-600 dark:bg-rose-950/30 dark:text-rose-400">
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-gray-700 dark:text-zinc-300 font-semibold truncate max-w-[150px]">{p.name}</span>
+                    </div>
+                    <span className="font-extrabold text-rose-600 dark:text-rose-400">{formatINR(Math.abs(p.balance))}</span>
                   </div>
                 ))}
               </div>
@@ -694,90 +809,72 @@ export function DashboardAlerts() {
         </div>
       </Card>
 
-      {/* 4b. GST Liabilities Status */}
-      <Card className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <h3 className="text-base font-bold text-gray-900 dark:text-white">GST Status (GSTR-3B)</h3>
-        <p className="text-xs text-gray-500 mb-4">Estimated net tax obligation</p>
-
-        <div className="space-y-3.5">
-          <div className="flex justify-between text-xs items-center">
-            <span className="text-gray-500 font-medium">Output Tax (Sales)</span>
-            <span className="font-bold text-gray-900 dark:text-white">{formatINR(gst?.output.total ?? 0)}</span>
-          </div>
-          <div className="flex justify-between text-xs items-center">
-            <span className="text-gray-500 font-medium">Input Tax Credit (ITC)</span>
-            <span className="font-bold text-emerald-600">{formatINR(gst?.input.total ?? 0)}</span>
-          </div>
-
-          <div className="rounded-xl border border-gray-100 p-3.5 bg-gray-50 dark:border-zinc-900 dark:bg-zinc-900/50">
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                <Info className="h-3.5 w-3.5 text-gray-400" />
-                Net GST Payable
-              </span>
-              <span className={cn(
-                "font-bold text-sm",
-                (gst?.netPayable ?? 0) >= 0 ? "text-amber-600" : "text-emerald-600"
-              )}>
-                {gst?.netPayable && gst.netPayable < 0 ? "Refund/ITC Credit" : formatINR(gst?.netPayable ?? 0)}
-              </span>
-            </div>
-            <p className="mt-1 text-[10px] text-gray-400">
-              {gst?.netPayable && gst.netPayable < 0
-                ? "You have accumulated excess Input Tax Credit to offset future sales."
-                : "Tax obligation estimates based on tax configuration setup."}
-            </p>
-          </div>
-        </div>
-      </Card>
-
       {/* 4c. Low Stock Alerts */}
-      <Card className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+      <Card className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-[0_12px_30px_rgba(20,184,166,0.05)] dark:border-zinc-800 dark:bg-zinc-950 dark:hover:shadow-[0_12px_30px_rgba(20,184,166,0.03)]">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Stock Level Alerts</h3>
             <p className="text-xs text-gray-500">Products currently below threshold levels</p>
           </div>
           {lowStockProducts.length > 0 && (
-            <Badge variant="destructive" className="bg-red-500 text-white font-bold h-5 px-2">
+            <Badge variant="destructive" className="bg-gradient-to-r from-red-500 to-rose-600 text-white font-extrabold h-5 px-2 rounded-full shadow-sm animate-pulse">
               {lowStockProducts.length}
             </Badge>
           )}
         </div>
 
         {lowStockProducts.length === 0 ? (
-          <div className="flex items-center gap-3 rounded-xl border border-green-50 bg-green-50/50 p-4 dark:border-emerald-950/20 dark:bg-emerald-950/10">
-            <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+          <div className="flex items-center gap-3.5 rounded-2xl border border-emerald-50 bg-gradient-to-br from-emerald-50/30 to-teal-50/10 p-4 dark:border-emerald-950/20 dark:from-emerald-950/5 dark:to-zinc-950/20 shadow-sm">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 shadow-inner">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
             <div>
-              <h4 className="text-xs font-bold text-green-800 dark:text-emerald-400">All Items Stocked</h4>
-              <p className="text-[11px] text-green-600 mt-0.5">No critical shortages identified.</p>
+              <h4 className="text-xs font-extrabold text-emerald-800 dark:text-emerald-400">All Items Stocked</h4>
+              <p className="text-[10px] font-bold text-emerald-600/80 dark:text-emerald-400/70 mt-0.5">No critical shortages identified.</p>
             </div>
           </div>
         ) : (
-          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-            {lowStockProducts.slice(0, 4).map(it => (
-              <div
-                key={it.id}
-                className="flex items-center justify-between rounded-xl border border-red-50 bg-red-50/30 p-3 dark:border-red-950/25 dark:bg-red-950/10"
-              >
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate" title={it.name}>
-                    {it.name}
-                  </h4>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    Threshold: {it.minStock} {it.unit}
-                  </p>
+          <div className="space-y-3.5 max-h-[240px] overflow-y-auto pr-1">
+            {lowStockProducts.slice(0, 4).map(it => {
+              const pct = it.minStock > 0 ? Math.min((it.qty / it.minStock) * 100, 100) : 0;
+              return (
+                <div
+                  key={it.id}
+                  className="group/item flex flex-col justify-between rounded-2xl border border-red-50 bg-red-50/20 p-3.5 transition-all duration-300 hover:bg-red-50/30 dark:border-red-950/10 dark:bg-red-950/5 dark:hover:bg-red-950/10"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-extrabold text-gray-900 dark:text-white truncate" title={it.name}>
+                        {it.name}
+                      </h4>
+                      <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                        Threshold: {it.minStock} {it.unit}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-extrabold text-red-600 dark:text-red-400">
+                        {it.qty} {it.unit}
+                      </span>
+                      <p className="text-[9px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">Shortage</p>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 space-y-1">
+                    <div className="h-1.5 w-full rounded-full bg-red-100 dark:bg-red-950/20 overflow-hidden shadow-inner">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-500 shadow-[0_0_6px_rgba(239,68,68,0.4)]"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[9px] font-bold text-gray-400">
+                      <span>Stock ratio: {Math.round(pct)}%</span>
+                      <span>Critical</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-red-600">
-                    {it.qty} {it.unit}
-                  </span>
-                  <p className="text-[10px] font-semibold text-gray-400 mt-0.5">Shortage</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {lowStockProducts.length > 4 && (
-              <p className="text-[10px] text-center text-gray-400 font-semibold mt-2">
+              <p className="text-[10px] text-center text-gray-400 dark:text-zinc-500 font-extrabold mt-2 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer transition">
                 + {lowStockProducts.length - 4} more items running low
               </p>
             )}

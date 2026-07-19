@@ -68,7 +68,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     router.replace("/login");
   };
 
-  if (loading) return <LoadingScreen message="Verifying session..." />;
+  if (loading) return null;
   if (!session && !isPublic) return null;
 
   // Public pages (login, storefront) render without the app shell.
