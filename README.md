@@ -28,6 +28,9 @@ Invoixe is a comprehensive desktop-first and mobile-responsive billing platform 
 *   **📦 Advanced Inventory Engine:** Define products and services with tax-inclusive/exclusive pricing structures, assign custom SKUs/codes, manage low-stock thresholds, and track batch expiries or unique serial numbers.
 *   **👥 Dual-Party Ledger:** Maintain active customer and supplier profiles, set credit limits or grace periods, track opening balances, verify GSTINs, and generate ledger balance statements.
 *   **🏢 Multi-Tenant Workspaces:** Create and toggle between multiple business profiles securely. Each tenant has isolated database references, dedicated storage buckets, configuration rules, and staff access controls.
+*   **👷 Employee Management:** Full employee lifecycle management — maintain current staff records, payroll details, emergency contacts, and an archive of past employees with relieving details.
+*   **📊 Timeframe Dashboard Analytics:** Interactive home dashboard with range-based filters (1D, 7D, 1M, 1Y, 5Y, All) updating Today's Sales, Gross Profit, and the Sales vs Expense trend graph in real-time from the database.
+*   **🏭 Manufacturing Tracking:** Log and track raw material consumption, work-in-progress batches, and finished goods production runs across godowns.
 
 ---
 
@@ -39,7 +42,16 @@ Invoixe is organized as a unified monorepo leveraging npm workspaces:
 ├── client/
 │   └── web/                 # @invoixe/web   — Next.js 15 app (Dashboard, POS, Ledgers)
 │       ├── app/             #   Routes (App Router); each folder is a URL segment
+│       │   ├── employees/   #   Employee management CRUD pages
+│       │   ├── manufacturing/#  Manufacturing batch & BOM tracking pages
+│       │   ├── parties/     #   Customer & supplier party ledger pages
+│       │   ├── invoices/    #   Invoice listing & print/PDF preview pages
+│       │   ├── items/       #   Inventory item catalog & creation pages
+│       │   ├── godowns/     #   Godown (warehouse) management pages
+│       │   └── bank/        #   Bank accounts & cheque management pages
 │       ├── components/      #   App components (kebab-case files)
+│       │   ├── dashboard-metrics.tsx  # KPI cards, trend graph, activity feed
+│       │   ├── app-shell.tsx          # Sidebar nav with employee section
 │       │   └── ui/          #   Vendored shadcn/ui primitives
 │       ├── lib/             #   Browser-side helpers: API client, Supabase, CSV, nav
 │       └── public/          #   Static assets served at the site root
@@ -47,6 +59,8 @@ Invoixe is organized as a unified monorepo leveraging npm workspaces:
 │   ├── api/                 # @invoixe/api  — NestJS REST API
 │   │   ├── build.mjs        #   Production bundle configuration
 │   │   └── src/
+│   │       ├── employees/   #   Employee CRUD module (controller + service)
+│   │       ├── reports/     #   Dashboard KPI, trend, summary, GST, stock endpoints
 │   │       ├── <resource>/  #   One module per resource (controller + service)
 │   │       ├── common/      #   Prisma module, Supabase auth guard, Zod validation pipe
 │   │       └── lib/         #   Auth types, tenancy, ledger, numbering, stock helpers
@@ -59,3 +73,21 @@ Invoixe is organized as a unified monorepo leveraging npm workspaces:
 ├── scripts/                 # Repo maintenance scripts
 └── package.json             # Workspace definitions & root scripts
 ```
+
+---
+
+## 📐 Recent Changes
+
+### v0.2 — July 2026
+
+| Area | Change |
+|------|--------|
+| **Employee Management** | New full module — list, create, edit, archive employees with payroll, contacts, and status tracking |
+| **Dashboard Filters** | Global 1D/7D/1M/1Y/5Y/All range selectors updating Sales, Gross Profit, and Trend graph dynamically via real-time DB queries |
+| **Invoice Print Preview** | Complete redesign — clean typography, monospace number columns, billing address card, symmetrical footer |
+| **Parties Page** | Redesigned from scratch with top-level KPI stats, customer/supplier segmentation, and action menus |
+| **Manufacturing Page** | Redesigned with flat, structured UI — raw materials, WIP batches, and finished goods tracking |
+| **Items & Godowns** | Unified table redesign with consistent border-oriented flat visual language |
+| **Cheques** | Action dropdown redesign with Lucide icons for mark-deposited, mark-cleared, mark-bounced |
+| **App Shell Sidebar** | Employee management section added with People icon group |
+| **Backend Reports** | `/api/reports/trend` endpoint added; `dashboard` and `summary` endpoints now accept `?range=` parameter |
