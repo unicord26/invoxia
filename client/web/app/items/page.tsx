@@ -319,10 +319,13 @@ function ItemsList() {
 
   const filteredRows = items
     ? items.filter((row) => {
+        const isRaw =
+          row.categoryName?.toLowerCase().includes("raw") ||
+          row.itemCode?.startsWith("RM-");
         if (rawOnly) {
-          return row.categoryName?.toLowerCase() === "raw material";
+          return isRaw;
         }
-        return true;
+        return !isRaw;
       })
     : [];
 
