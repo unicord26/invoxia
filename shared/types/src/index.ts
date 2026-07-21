@@ -429,22 +429,6 @@ export const createLoanEntrySchema = z.object({
 });
 export type CreateLoanEntry = z.infer<typeof createLoanEntrySchema>;
 
-/* ---------------- Godown stock transfer ---------------- */
-
-export const stockTransferSchema = z
-  .object({
-    itemId: z.string().uuid(),
-    fromGodownId: z.string().uuid(),
-    toGodownId: z.string().uuid(),
-    qty: z.number().positive("Qty must be > 0"),
-    note: z.string().max(200).nullish(),
-  })
-  .refine((v) => v.fromGodownId !== v.toGodownId, {
-    message: "Source and destination godowns must differ",
-    path: ["toGodownId"],
-  });
-export type StockTransferInput = z.infer<typeof stockTransferSchema>;
-
 /* ---------------- Batch & serial tracking ---------------- */
 
 export const createBatchSchema = z.object({

@@ -260,7 +260,6 @@ model StockMovement {
   itemId           String
   qty              Float // + in (purchase/adjust-up), - out (sale/adjust-down)
   reason           String // sale | purchase | adjustment | transfer
-  godownId         String? // which godown this movement affected
   refTransactionId String?
   note             String?
   createdAt        DateTime @default(now())
@@ -268,7 +267,6 @@ model StockMovement {
 
   @@index([businessId])
   @@index([itemId])
-  @@index([godownId])
 }
 
 // Batch/lot tracking for an item (batch no + expiry/mfg + on-hand qty).
@@ -300,22 +298,6 @@ model SerialNumber {
   updatedAt        DateTime @updatedAt
 
   @@unique([itemId, serial])
-  @@index([itemId])
-}
-
-// A stock transfer between two godowns → writes a paired (−/+) StockMovement set.
-model StockTransfer {
-  id           String   @id @default(uuid())
-  businessId   String
-  itemId       String
-  fromGodownId String
-  toGodownId   String
-  qty          Float
-  note         String?
-  date         DateTime @default(now())
-  createdAt    DateTime @default(now())
-
-  @@index([businessId])
   @@index([itemId])
 }
 
@@ -539,7 +521,7 @@ model BankEntry {
 }
 
 // ------------------------------------------------------------------
-// Manufacturing & godowns (Phase 11)
+// Manufacturing (Phase 11)
 // ------------------------------------------------------------------
 
 model Bom {
@@ -561,17 +543,6 @@ model BomLine {
   bom       Bom    @relation(fields: [bomId], references: [id], onDelete: Cascade)
 
   @@index([bomId])
-}
-
-model Godown {
-  id         String    @id @default(uuid())
-  businessId String
-  name       String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
-
-  @@index([businessId])
 }
 
 // One-time codes for phone/email verification during sign-up.
