@@ -6,7 +6,7 @@ import { signedBalanceDelta } from "../lib/ledger";
 import { getStockMap } from "../lib/stock";
 import { CurrentUser, SupabaseAuthGuard } from "../common/supabase-auth.guard";
 
-type Bal = { name: string; type: string; balance: number };
+type Bal = { name: string; type: string; balance: number; phone?: string | null };
 
 function getRangeStartDate(range: string): Date | null {
   const d = new Date();
@@ -44,7 +44,7 @@ export class ReportsService {
       _sum: { grandTotal: true },
     });
     const map: Record<string, Bal> = {};
-    for (const p of parties) map[p.id] = { name: p.name, type: p.type, balance: p.openingBalance };
+    for (const p of parties) map[p.id] = { name: p.name, type: p.type, phone: p.phone, balance: p.openingBalance };
     for (const g of grouped) {
       if (!g.partyId || !map[g.partyId]) continue;
       map[g.partyId]!.balance += signedBalanceDelta(g.type, g._sum.grandTotal ?? 0);
@@ -167,13 +167,22 @@ export class ReportsService {
     const businessId = await getUserBusinessId(user);
     const items = await this.prisma.item.findMany({
       where: { businessId, deletedAt: null, type: "product" },
+      include: { category: true },
       orderBy: { name: "asc" },
     });
     const map = await getStockMap(businessId);
     const rows = items.map((it) => {
       const qty = map[it.id] ?? it.openingStock;
       return {
-        id: it.id, name: it.name, unit: it.unit, qty, minStock: it.minStock,
+        id: it.id,
+        name: it.name,
+        itemCode: it.itemCode,
+        categoryName: it.category?.name ?? "General",
+        unit: it.unit,
+        qty,
+        minStock: it.minStock,
+        purchasePrice: it.purchasePrice,
+        salePrice: it.salePrice,
         value: Math.round(qty * it.purchasePrice),
         low: qty <= it.minStock && it.minStock > 0,
       };
@@ -182,11 +191,16 @@ export class ReportsService {
   }
 
   /** GSTR-3B style output vs input summary. */
-  async gst(user: AuthUser) {
+  async gst(user: AuthUser, range?: string) {
     const businessId = await getUserBusinessId(user);
+    const startDate = range ? getRangeStartDate(range) : null;
     const agg = await this.prisma.transaction.groupBy({
       by: ["type"],
-      where: { businessId, deletedAt: null },
+      where: {
+        businessId,
+        deletedAt: null,
+        ...(startDate ? { date: { gte: startDate } } : {}),
+      },
       _sum: { cgst: true, sgst: true, igst: true, totalTax: true, subTotal: true },
     });
     type GstSums = {
@@ -208,17 +222,36 @@ export class ReportsService {
   }
 
   /** All transactions, newest first. */
-  async daybook(user: AuthUser) {
+  async daybook(user: AuthUser, range?: string) {
     const businessId = await getUserBusinessId(user);
+    const startDate = range ? getRangeStartDate(range) : null;
     return this.prisma.transaction.findMany({
-      where: { businessId, deletedAt: null },
+      where: {
+        businessId,
+        deletedAt: null,
+        ...(startDate ? { date: { gte: startDate } } : {}),
+      },
       orderBy: { date: "desc" },
-      take: 200,
-      select: { id: true, type: true, number: true, date: true, partyName: true, grandTotal: true },
+      take: 500,
+      select: {
+        id: true,
+        type: true,
+        number: true,
+        date: true,
+        dueDate: true,
+        partyId: true,
+        partyName: true,
+        paymentMode: true,
+        referenceNo: true,
+        category: true,
+        subTotal: true,
+        totalTax: true,
+        grandTotal: true,
+      },
     });
   }
 
-  /** Grouped sales/expenses trend for the graph. */
+  /** Accurate real-time profitability & revenue/expense trend breakdown. */
   async trend(user: AuthUser, range: string) {
     const businessId = await getUserBusinessId(user);
     const startDate = getRangeStartDate(range);
@@ -230,30 +263,29 @@ export class ReportsService {
         type: { in: ["sale", "purchase", "expense"] },
         ...(startDate ? { date: { gte: startDate } } : {}),
       },
-      select: { type: true, grandTotal: true, date: true },
+      select: { type: true, grandTotal: true, subTotal: true, date: true },
       orderBy: { date: "asc" },
     });
 
     const now = new Date();
-    interface Point {
+    interface PointInternal {
       label: string;
       sales: number;
+      purchases: number;
       expenses: number;
       start: Date;
       end: Date;
     }
-    const points: Point[] = [];
+    const points: PointInternal[] = [];
 
     if (range === "1D") {
-      // 8 intervals of 3 hours
       for (let i = 7; i >= 0; i--) {
         const start = new Date(now.getTime() - (i + 1) * 3 * 60 * 60 * 1000);
         const end = new Date(now.getTime() - i * 3 * 60 * 60 * 1000);
         const label = start.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: true });
-        points.push({ label, sales: 0, expenses: 0, start, end });
+        points.push({ label, sales: 0, purchases: 0, expenses: 0, start, end });
       }
     } else if (range === "7D") {
-      // 7 calendar days
       for (let i = 6; i >= 0; i--) {
         const start = new Date();
         start.setDate(now.getDate() - i);
@@ -261,10 +293,9 @@ export class ReportsService {
         const end = new Date(start);
         end.setHours(23, 59, 59, 999);
         const label = start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-        points.push({ label, sales: 0, expenses: 0, start, end });
+        points.push({ label, sales: 0, purchases: 0, expenses: 0, start, end });
       }
     } else if (range === "1M") {
-      // 30 calendar days
       for (let i = 29; i >= 0; i--) {
         const start = new Date();
         start.setDate(now.getDate() - i);
@@ -272,43 +303,45 @@ export class ReportsService {
         const end = new Date(start);
         end.setHours(23, 59, 59, 999);
         const label = start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-        points.push({ label, sales: 0, expenses: 0, start, end });
+        points.push({ label, sales: 0, purchases: 0, expenses: 0, start, end });
       }
     } else if (range === "1Y") {
-      // 12 calendar months
       for (let i = 11; i >= 0; i--) {
         const start = new Date(now.getFullYear(), now.getMonth() - i, 1, 0, 0, 0, 0);
         const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
         const label = start.toLocaleDateString(undefined, { month: "short" });
-        points.push({ label, sales: 0, expenses: 0, start, end });
+        points.push({ label, sales: 0, purchases: 0, expenses: 0, start, end });
       }
     } else {
-      // 5 years or all
-      const years = range === "5Y" ? 5 : 5;
+      const years = 5;
       for (let i = years - 1; i >= 0; i--) {
         const start = new Date(now.getFullYear() - i, 0, 1, 0, 0, 0, 0);
         const end = new Date(now.getFullYear() - i, 11, 31, 23, 59, 59, 999);
         const label = start.toLocaleDateString(undefined, { year: "numeric" });
-        points.push({ label, sales: 0, expenses: 0, start, end });
+        points.push({ label, sales: 0, purchases: 0, expenses: 0, start, end });
       }
     }
 
     for (const tx of transactions) {
       const txTime = new Date(tx.date).getTime();
-      const pt = points.find(p => txTime >= p.start.getTime() && txTime <= p.end.getTime());
+      const pt = points.find((p) => txTime >= p.start.getTime() && txTime <= p.end.getTime());
       if (pt) {
         if (tx.type === "sale") {
           pt.sales += tx.grandTotal;
-        } else if (tx.type === "purchase" || tx.type === "expense") {
+        } else if (tx.type === "purchase") {
+          pt.purchases += tx.grandTotal;
+        } else if (tx.type === "expense") {
           pt.expenses += tx.grandTotal;
         }
       }
     }
 
-    return points.map(p => ({
+    return points.map((p) => ({
       label: p.label,
       sales: p.sales,
-      expenses: p.expenses
+      purchases: p.purchases,
+      expenses: p.expenses,
+      profit: p.sales - p.purchases - p.expenses, // Net profit or loss in paise
     }));
   }
 }
@@ -343,13 +376,13 @@ export class ReportsController {
   }
 
   @Get("gst")
-  gst(@CurrentUser() user: AuthUser) {
-    return this.reports.gst(user);
+  gst(@CurrentUser() user: AuthUser, @Query("range") range?: string) {
+    return this.reports.gst(user, range);
   }
 
   @Get("daybook")
-  daybook(@CurrentUser() user: AuthUser) {
-    return this.reports.daybook(user);
+  daybook(@CurrentUser() user: AuthUser, @Query("range") range?: string) {
+    return this.reports.daybook(user, range);
   }
 
   @Get("trend")
